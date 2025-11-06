@@ -18,7 +18,7 @@ import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
  */
 public class BenefitPlanConverter {
     
-    private static final String CSV_FILE = "us_pharmacy_plans.csv";
+    private static final String CSV_FILE = "database/data/us_pharmacy_plans.csv";
     private static final String CSV_DELIMITER = ",";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     
