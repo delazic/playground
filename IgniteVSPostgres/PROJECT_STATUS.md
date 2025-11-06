@@ -406,7 +406,6 @@ docker-compose down -v && docker-compose up -d
 
 ### Development Team
 - **Lead Developer:** Dejan Lazic
-- **AI Assistant:** Bob (Claude 3.7 Sonnet)
 
 ### Development Environment
 - **OS:** macOS
