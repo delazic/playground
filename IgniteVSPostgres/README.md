@@ -1,18 +1,22 @@
-# Pharmacy Benefit Management (PBM) System Architecture
+# Pharmacy Benefit Management (PBM)
 
 ## Table of Contents
-1. [System Overview](#system-overview)
-2. [Core Business Processes](#core-business-processes)
-3. [System Architecture](#system-architecture)
-4. [Database Design](#database-design)
-5. [Service Layer](#service-layer)
-6. [API Specifications](#api-specifications)
-7. [Performance & Caching Strategy](#performance--caching-strategy)
-8. [Security & Compliance](#security--compliance)
+1. [System Architecture](#system-architecture)
+   - [System Overview](#system-overview)
+   - [Core Business Processes](#core-business-processes)
+   - [High-Level Architecture](#high-level-architecture)
+   - [Database Design](#database-design)
+   - [Service Layer](#service-layer)
+   - [API Specifications](#api-specifications)
+   - [Performance & Caching Strategy](#performance--caching-strategy)
+   - [Security & Compliance](#security--compliance)
+2. [Implementation](#implementation)
 
 ---
 
-## System Overview
+## System Architecture
+
+### System Overview
 
 The Pharmacy Benefit Management (PBM) system is designed to process prescription drug claims in real-time for the US healthcare market. The system manages the complete lifecycle of pharmacy benefits including member eligibility, formulary management, claims adjudication, pricing calculations, and pharmacy network management.
 
@@ -34,9 +38,9 @@ The Pharmacy Benefit Management (PBM) system is designed to process prescription
 
 ---
 
-## Core Business Processes
+### Core Business Processes
 
-### 1. Claims Adjudication Workflow
+#### 1. Claims Adjudication Workflow
 
 The claims adjudication process is the heart of the PBM system:
 
@@ -64,7 +68,7 @@ flowchart TD
     Q --> R[Return approval with pricing]
 ```
 
-### 2. Key Business Entities
+#### 2. Key Business Entities
 
 - **Member**: Individual covered under a health plan
 - **Plan**: Benefit design with coverage rules and cost-sharing
@@ -75,8 +79,6 @@ flowchart TD
 - **Prior Authorization**: Approval workflow for restricted drugs
 
 ---
-
-## System Architecture
 
 ### High-Level Architecture
 
@@ -157,9 +159,9 @@ The system follows a microservices pattern with the following services:
 
 ---
 
-## Database Design
+### Database Design
 
-### Entity Relationship Diagram
+#### Entity Relationship Diagram
 
 ```mermaid
 erDiagram
@@ -434,9 +436,9 @@ CREATE INDEX idx_claim_processing ON claim(claim_status, submitted_at) WHERE cla
 
 ---
 
-## Service Layer
+### Service Layer
 
-### 1. Claims Adjudication Service
+#### 1. Claims Adjudication Service
 
 **Responsibility**: Process pharmacy claims in real-time
 
@@ -460,7 +462,7 @@ List<Claim> getClaimHistory(String memberId, LocalDate startDate, LocalDate endD
 - Comprehensive validation rules
 - Rejection code mapping
 
-### 2. Eligibility Service
+#### 2. Eligibility Service
 
 **Responsibility**: Verify member coverage and benefits
 
@@ -483,7 +485,7 @@ AccumulatorStatus getAccumulators(String memberId, String planId)
 - Real-time accumulator tracking
 - Coordination of benefits (COB)
 
-### 3. Formulary Service
+#### 3. Formulary Service
 
 **Responsibility**: Manage drug coverage and restrictions
 
@@ -506,7 +508,7 @@ List<Alternative> getAlternatives(String ndcCode, String planId)
 - Quantity and day supply limits
 - Therapeutic alternatives
 
-### 4. Pricing Service
+#### 4. Pricing Service
 
 **Responsibility**: Calculate costs and reimbursements
 
@@ -529,7 +531,7 @@ ReimbursementAmount calculateReimbursement(String pharmacyId, String ndcCode)
 - Deductible and out-of-pocket max tracking
 - Network-based reimbursement rates
 
-### 5. Drug Utilization Review (DUR) Service
+#### 5. Drug Utilization Review (DUR) Service
 
 **Responsibility**: Perform clinical safety checks
 
@@ -552,7 +554,7 @@ boolean validateDosage(String ndcCode, int quantity, int daysSupply)
 - Override capabilities
 - Clinical rule engine
 
-### 6. Prior Authorization Service
+#### 6. Prior Authorization Service
 
 **Responsibility**: Manage approval workflows
 
@@ -576,7 +578,7 @@ boolean validateAuthorization(String memberId, String ndcCode, LocalDate service
 - Quantity tracking
 - Clinical criteria evaluation
 
-### 7. Pharmacy Service
+#### 7. Pharmacy Service
 
 **Responsibility**: Manage pharmacy network data
 
@@ -593,7 +595,7 @@ List<Pharmacy> searchPharmacies(PharmacySearchCriteria criteria)
 NetworkStatus checkNetworkStatus(String pharmacyId, String networkId)
 ```
 
-### 8. Member Service
+#### 8. Member Service
 
 **Responsibility**: Manage member information
 
@@ -612,9 +614,9 @@ Member updateMember(String memberId, MemberUpdate update)
 
 ---
 
-## API Specifications
+### API Specifications
 
-### REST API Design Principles
+#### REST API Design Principles
 
 - RESTful resource-based URLs
 - JSON request/response format
@@ -623,14 +625,14 @@ Member updateMember(String memberId, MemberUpdate update)
 - Pagination for list endpoints
 - Filtering and sorting support
 
-### Authentication & Authorization
+#### Authentication & Authorization
 
 ```
 Authorization: Bearer <JWT_TOKEN>
 X-API-Key: <API_KEY>
 ```
 
-### Common Response Structure
+#### Common Response Structure
 
 ```json
 {
@@ -645,9 +647,9 @@ X-API-Key: <API_KEY>
 }
 ```
 
-### 1. Claims API
+#### 1. Claims API
 
-#### Submit Claim
+##### Submit Claim
 ```
 POST /api/v1/claims
 Content-Type: application/json
@@ -718,7 +720,7 @@ Response (400 Bad Request - Rejection):
 }
 ```
 
-#### Reverse Claim
+##### Reverse Claim
 ```
 POST /api/v1/claims/{claimNumber}/reverse
 Content-Type: application/json
@@ -740,7 +742,7 @@ Response (200 OK):
 }
 ```
 
-#### Get Claim History
+##### Get Claim History
 ```
 GET /api/v1/claims?memberId=M123456&startDate=2024-01-01&endDate=2024-01-31&page=1&size=20
 
@@ -770,9 +772,9 @@ Response (200 OK):
 }
 ```
 
-### 2. Eligibility API
+#### 2. Eligibility API
 
-#### Check Eligibility
+##### Check Eligibility
 ```
 POST /api/v1/eligibility/check
 Content-Type: application/json
@@ -812,9 +814,9 @@ Response (200 OK):
 }
 ```
 
-### 3. Formulary API
+#### 3. Formulary API
 
-#### Check Drug Coverage
+##### Check Drug Coverage
 ```
 GET /api/v1/formulary/coverage?planId=PLN001&ndcCode=00002-1234-01
 
@@ -839,7 +841,7 @@ Response (200 OK):
 }
 ```
 
-#### Search Formulary
+##### Search Formulary
 ```
 GET /api/v1/formulary/search?planId=PLN001&query=lisinopril&page=1&size=20
 
@@ -867,9 +869,9 @@ Response (200 OK):
 }
 ```
 
-### 4. Prior Authorization API
+#### 4. Prior Authorization API
 
-#### Submit Prior Auth Request
+##### Submit Prior Auth Request
 ```
 POST /api/v1/prior-auth
 Content-Type: application/json
@@ -898,7 +900,7 @@ Response (201 Created):
 }
 ```
 
-#### Check Prior Auth Status
+##### Check Prior Auth Status
 ```
 GET /api/v1/prior-auth/{authNumber}
 
@@ -918,9 +920,9 @@ Response (200 OK):
 }
 ```
 
-### 5. Pharmacy API
+#### 5. Pharmacy API
 
-#### Get Pharmacy Details
+##### Get Pharmacy Details
 ```
 GET /api/v1/pharmacies/{ncpdpId}
 
@@ -951,7 +953,7 @@ Response (200 OK):
 }
 ```
 
-#### Search Pharmacies
+##### Search Pharmacies
 ```
 GET /api/v1/pharmacies/search?zipCode=62701&radius=10&networkId=NET001
 
@@ -974,9 +976,9 @@ Response (200 OK):
 }
 ```
 
-### 6. Member API
+#### 6. Member API
 
-#### Get Member Details
+##### Get Member Details
 ```
 GET /api/v1/members/{memberId}
 
@@ -1012,7 +1014,7 @@ Response (200 OK):
 }
 ```
 
-### API Error Codes
+#### API Error Codes
 
 | Code | Description |
 |------|-------------|
@@ -1029,9 +1031,9 @@ Response (200 OK):
 
 ---
 
-## Performance & Caching Strategy
+### Performance & Caching Strategy
 
-### Performance Requirements
+#### Performance Requirements
 
 - **Claims Processing**: <500ms response time (95th percentile)
 - **Eligibility Check**: <100ms response time
@@ -1039,7 +1041,7 @@ Response (200 OK):
 - **Throughput**: 10,000+ claims per minute
 - **Availability**: 99.9% uptime
 
-### Caching Architecture
+#### Caching Architecture
 
 ```mermaid
 graph LR
@@ -1058,41 +1060,41 @@ graph LR
     end
 ```
 
-### Cache Strategy by Entity
+#### Cache Strategy by Entity
 
-#### 1. Member Data
+##### 1. Member Data
 - **Cache Duration**: 15 minutes
 - **Invalidation**: On member update
 - **Key Pattern**: `member:{memberId}`
 - **Rationale**: Moderate change frequency, high read volume
 
-#### 2. Plan & Formulary Data
+##### 2. Plan & Formulary Data
 - **Cache Duration**: 1 hour
 - **Invalidation**: On plan/formulary update
 - **Key Pattern**: `plan:{planId}`, `formulary:{planId}:{ndcCode}`
 - **Rationale**: Low change frequency, very high read volume
 
-#### 3. Drug Master Data
+##### 3. Drug Master Data
 - **Cache Duration**: 24 hours
 - **Invalidation**: On drug update
 - **Key Pattern**: `drug:{ndcCode}`
 - **Rationale**: Very low change frequency, high read volume
 
-#### 4. Pharmacy Data
+##### 4. Pharmacy Data
 - **Cache Duration**: 1 hour
 - **Invalidation**: On pharmacy update
 - **Key Pattern**: `pharmacy:{ncpdpId}`
 - **Rationale**: Low change frequency, moderate read volume
 
-#### 5. Prior Authorization Status
+##### 5. Prior Authorization Status
 - **Cache Duration**: 5 minutes
 - **Invalidation**: On status change
 - **Key Pattern**: `prior-auth:{authNumber}`
 - **Rationale**: Moderate change frequency, high read volume during claim processing
 
-### Cache Implementation Options
+#### Cache Implementation Options
 
-#### Option 1: Apache Ignite
+##### Option 1: Apache Ignite
 ```java
 // Distributed cache with SQL capabilities
 IgniteCache<String, Member> memberCache = ignite.cache("memberCache");
@@ -1110,7 +1112,7 @@ Member cachedMember = memberCache.get(memberId);
 - Higher memory footprint
 - More complex setup
 
-#### Option 2: Redis
+##### Option 2: Redis
 ```java
 // Simple key-value cache
 redisTemplate.opsForValue().set("member:" + memberId, member, 15, TimeUnit.MINUTES);
@@ -1127,7 +1129,7 @@ Member cachedMember = redisTemplate.opsForValue().get("member:" + memberId);
 - Limited query capabilities
 - Single-threaded per instance
 
-#### Option 3: Hazelcast
+##### Option 3: Hazelcast
 ```java
 // In-memory data grid
 HazelcastInstance hz = Hazelcast.newHazelcastInstance();
@@ -1145,9 +1147,9 @@ memberMap.put(memberId, member);
 - Less feature-rich than Ignite
 - Smaller community
 
-### Database Optimization
+#### Database Optimization
 
-#### Connection Pooling
+##### Connection Pooling
 ```java
 // HikariCP configuration
 HikariConfig config = new HikariConfig();
@@ -1158,12 +1160,12 @@ config.setIdleTimeout(600000);
 config.setMaxLifetime(1800000);
 ```
 
-#### Read Replicas
+##### Read Replicas
 - Master for writes
 - Read replicas for queries
 - Load balancing across replicas
 
-#### Partitioning Strategy
+##### Partitioning Strategy
 - Partition claims by date (monthly partitions)
 - Partition audit logs by date (daily partitions)
 - Improves query performance and maintenance
@@ -1180,7 +1182,7 @@ CREATE TABLE claim_2024_01 PARTITION OF claim
     FOR VALUES FROM ('2024-01-01') TO ('2024-02-01');
 ```
 
-### Monitoring & Metrics
+#### Monitoring & Metrics
 
 Key metrics to track:
 - Cache hit ratio (target: >90%)
@@ -1192,9 +1194,9 @@ Key metrics to track:
 
 ---
 
-## Security & Compliance
+### Security & Compliance
 
-### Security Architecture
+#### Security Architecture
 
 ```mermaid
 graph TB
@@ -1213,9 +1215,9 @@ graph TB
     end
 ```
 
-### Authentication & Authorization
+#### Authentication & Authorization
 
-#### JWT Token Structure
+##### JWT Token Structure
 ```json
 {
   "sub": "user@example.com",
@@ -1233,7 +1235,7 @@ graph TB
 }
 ```
 
-#### Role-Based Access Control (RBAC)
+##### Role-Based Access Control (RBAC)
 
 | Role | Permissions |
 |------|-------------|
@@ -1243,27 +1245,27 @@ graph TB
 | PLAN_ADMIN | Manage plans, formularies, configure rules |
 | SYSTEM_ADMIN | Full access, user management, system configuration |
 
-### Data Protection
+#### Data Protection
 
-#### Encryption at Rest
+##### Encryption at Rest
 - Database: AES-256 encryption
 - Backups: Encrypted with separate keys
 - File storage: Server-side encryption
 
-#### Encryption in Transit
+##### Encryption in Transit
 - TLS 1.3 for all API communications
 - Certificate pinning for mobile apps
 - Mutual TLS for service-to-service communication
 
-#### PHI/PII Protection
+##### PHI/PII Protection
 - Tokenization of sensitive data
 - Field-level encryption for SSN, DOB
 - Masking in logs and error messages
 - Data retention policies
 
-### HIPAA Compliance
+#### HIPAA Compliance
 
-#### Required Controls
+##### Required Controls
 
 1. **Access Controls**
    - Unique user identification
@@ -1287,7 +1289,7 @@ graph TB
    - Integrity controls
    - Network security
 
-#### Audit Logging
+##### Audit Logging
 
 All PHI access must be logged:
 ```json
@@ -1304,9 +1306,9 @@ All PHI access must be logged:
 }
 ```
 
-### API Security
+#### API Security
 
-#### Rate Limiting
+##### Rate Limiting
 ```
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 999
@@ -1317,28 +1319,28 @@ X-RateLimit-Reset: 1705334400
 - Per IP: 100 requests/minute
 - Burst allowance: 150% of limit for 10 seconds
 
-#### Input Validation
+##### Input Validation
 - Schema validation for all requests
 - SQL injection prevention
 - XSS protection
 - Command injection prevention
 
-#### API Key Management
+##### API Key Management
 - Rotation every 90 days
 - Separate keys for dev/test/prod
 - Key revocation capability
 - Usage tracking per key
 
-### Disaster Recovery
+#### Disaster Recovery
 
-#### Backup Strategy
+##### Backup Strategy
 - Database: Daily full backup, hourly incremental
 - Retention: 30 days online, 7 years archived
 - Geographic redundancy: Multi-region backups
 - Recovery Time Objective (RTO): 4 hours
 - Recovery Point Objective (RPO): 1 hour
 
-#### High Availability
+##### High Availability
 - Multi-AZ deployment
 - Active-active database replication
 - Automatic failover
@@ -1346,44 +1348,77 @@ X-RateLimit-Reset: 1705334400
 
 ---
 
-## Implementation Roadmap
+## Implementation
 
-### Phase 1: Foundation (Months 1-2)
+### Roadmap
+
+#### Phase 1: Foundation (Months 1-2)
 - [ ] Set up development environment
 - [ ] Create database schema
 - [ ] Implement core data models
 - [ ] Set up CI/CD pipeline
 - [ ] Implement authentication service
 
-### Phase 2: Core Services (Months 3-4)
+#### Phase 2: Core Services (Months 3-4)
 - [ ] Implement Member Service
 - [ ] Implement Plan Service
 - [ ] Implement Formulary Service
 - [ ] Implement Pharmacy Service
 - [ ] Set up caching layer
 
-### Phase 3: Claims Processing (Months 5-6)
+#### Phase 3: Claims Processing (Months 5-6)
 - [ ] Implement Eligibility Service
 - [ ] Implement Pricing Service
 - [ ] Implement DUR Service
 - [ ] Implement Claims Adjudication Service
 - [ ] Integration testing
 
-### Phase 4: Advanced Features (Months 7-8)
+#### Phase 4: Advanced Features (Months 7-8)
 - [ ] Implement Prior Authorization Service
 - [ ] Implement reporting capabilities
 - [ ] Implement audit logging
 - [ ] Performance optimization
 - [ ] Security hardening
 
-### Phase 5: Standards & Integration (Months 9-10)
+#### Phase 5: Standards & Integration (Months 9-10)
 - [ ] NCPDP D.0 compliance layer
 - [ ] External system integrations
 - [ ] Load testing
 - [ ] User acceptance testing
 - [ ] Documentation completion
 
----
+
+
+
+
+
+
+## Apache Ignite vs PostgreSQL Performance Comparison
+
+This project also includes performance benchmarking between Apache Ignite (in-memory data grid) and PostgreSQL for PBM workloads. See the [IgniteVSPostgres](./IgniteVSPostgres/) directory for implementation details.
+
+#### Use Cases for Each Technology
+
+**Apache Ignite**:
+- Real-time claims adjudication (sub-100ms response)
+- High-frequency eligibility checks
+- Formulary lookups during claim processing
+- Session state management
+- Distributed computing for analytics
+
+**PostgreSQL**:
+- Persistent storage for all entities
+- Complex reporting queries
+- Historical data analysis
+- Audit trail storage
+- Batch processing jobs
+
+**Hybrid Approach** (Recommended):
+- PostgreSQL as system of record
+- Ignite for hot data caching and real-time processing
+- Write-through cache pattern for consistency
+- Periodic cache refresh from PostgreSQL
+
 
 ## Appendix
 
@@ -1406,30 +1441,3 @@ X-RateLimit-Reset: 1705334400
 - HIPAA Regulations: https://www.hhs.gov/hipaa/
 - FDA NDC Directory: https://www.fda.gov/drugs/drug-approvals-and-databases/national-drug-code-directory
 
----
-
-## Apache Ignite vs PostgreSQL Performance Comparison
-
-This project also includes performance benchmarking between Apache Ignite (in-memory data grid) and PostgreSQL for PBM workloads. See the [IgniteVSPostgres](./IgniteVSPostgres/) directory for implementation details.
-
-### Use Cases for Each Technology
-
-**Apache Ignite**:
-- Real-time claims adjudication (sub-100ms response)
-- High-frequency eligibility checks
-- Formulary lookups during claim processing
-- Session state management
-- Distributed computing for analytics
-
-**PostgreSQL**:
-- Persistent storage for all entities
-- Complex reporting queries
-- Historical data analysis
-- Audit trail storage
-- Batch processing jobs
-
-**Hybrid Approach** (Recommended):
-- PostgreSQL as system of record
-- Ignite for hot data caching and real-time processing
-- Write-through cache pattern for consistency
-- Periodic cache refresh from PostgreSQL
