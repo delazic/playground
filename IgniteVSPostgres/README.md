@@ -1461,7 +1461,7 @@ Once setup is complete, you can access the following services:
 
 **pgAdmin (Database Management UI):**
 - URL: http://localhost:5050
-- Email: `admin@pbm.local`
+- Email: `admin@example.com`
 - Password: `admin`
 
 **Redis Cache:**
@@ -1544,7 +1544,7 @@ psql -h localhost -p 5432 -U pbm_user -d pbm_db
 
 **Using pgAdmin (web interface):**
 1. Open http://localhost:5050
-2. Login with admin@pbm.local / admin
+2. Login with admin@example.com / admin
 3. Add new server:
    - Name: PBM Local
    - Host: host.docker.internal (on Mac) or postgres (if in Docker network)

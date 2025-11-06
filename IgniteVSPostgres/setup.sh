@@ -147,19 +147,45 @@ docker-compose up -d
 # Wait for PostgreSQL to be ready
 echo ""
 print_info "Waiting for PostgreSQL to be ready..."
-sleep 10
 
-MAX_RETRIES=30
+# First check if container is running
+sleep 5
+if ! docker-compose ps postgres | grep -q "Up"; then
+    print_error "PostgreSQL container failed to start"
+    print_info "Checking logs..."
+    docker-compose logs postgres | tail -20
+    print_info ""
+    print_info "Try these steps:"
+    print_info "1. Check if port 5432 is in use: lsof -i :5432"
+    print_info "2. View full logs: docker-compose logs postgres"
+    print_info "3. Try manual start: docker-compose up postgres"
+    exit 1
+fi
+
+# Wait for PostgreSQL to accept connections
+MAX_RETRIES=60
 RETRY_COUNT=0
 until docker-compose exec -T postgres pg_isready -U pbm_user -d pbm_db &> /dev/null || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
-    echo -n "."
+    if [ $((RETRY_COUNT % 10)) -eq 0 ]; then
+        echo -n " ${RETRY_COUNT}s"
+    else
+        echo -n "."
+    fi
     sleep 1
     RETRY_COUNT=$((RETRY_COUNT + 1))
 done
 echo ""
 
 if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-    print_error "PostgreSQL failed to start"
+    print_error "PostgreSQL failed to become ready after ${MAX_RETRIES} seconds"
+    print_info "Checking logs..."
+    docker-compose logs postgres | tail -30
+    print_info ""
+    print_info "Troubleshooting steps:"
+    print_info "1. Check logs: docker-compose logs postgres"
+    print_info "2. Check status: docker-compose ps"
+    print_info "3. Try restart: docker-compose restart postgres"
+    print_info "4. See TROUBLESHOOTING.md for more help"
     exit 1
 fi
 
@@ -194,7 +220,7 @@ echo "  Password: pbm_password"
 echo ""
 echo "pgAdmin:"
 echo "  URL: http://localhost:5050"
-echo "  Email: admin@pbm.local"
+echo "  Email: admin@example.com"
 echo "  Password: admin"
 echo ""
 echo "Redis:"
