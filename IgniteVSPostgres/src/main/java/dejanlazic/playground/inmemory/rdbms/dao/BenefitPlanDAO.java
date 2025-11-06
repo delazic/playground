@@ -88,6 +88,8 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
     
     @Override
     public BenefitPlan insert(BenefitPlan plan) throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "INSERT");
+        
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(INSERT_SQL)) {
             
@@ -95,11 +97,14 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    // Note: BenefitPlan doesn't have a plan_id field, so we just return the plan
+                    metrics.setRecordCount(1);
+                    metrics.setRecordSizeBytes(estimatePlanSize(plan));
                     LOGGER.log(Level.INFO, "Inserted plan: {0}", plan.getPlanCode());
                 }
             }
             return plan;
+        } finally {
+            metrics.complete();
         }
     }
     
@@ -110,6 +115,7 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             return 0;
         }
         
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "INSERT_BATCH");
         int insertedCount = 0;
         
         try (Connection conn = connector.getConnection();
@@ -118,9 +124,11 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             conn.setAutoCommit(false);
             
             try {
+                long totalSize = 0;
                 for (int i = 0; i < plans.size(); i++) {
                     setPlanParameters(ps, plans.get(i));
                     ps.addBatch();
+                    totalSize += estimatePlanSize(plans.get(i));
                     
                     if ((i + 1) % BATCH_SIZE == 0 || i == plans.size() - 1) {
                         int[] results = ps.executeBatch();
@@ -130,6 +138,8 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
                 }
                 
                 conn.commit();
+                metrics.setRecordCount(insertedCount);
+                metrics.setRecordSizeBytes(totalSize);
                 LOGGER.log(Level.INFO, "Successfully inserted {0} plans", insertedCount);
                 
             } catch (SQLException e) {
@@ -140,6 +150,7 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
                         insertedCount, plans.size()), e);
             } finally {
                 conn.setAutoCommit(true);
+                metrics.complete();
             }
         }
         
@@ -148,6 +159,8 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
     
     @Override
     public Optional<BenefitPlan> findById(UUID id) throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "SELECT_BY_ID");
+        
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_ID_SQL)) {
             
@@ -155,11 +168,17 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapResultSetToPlan(rs));
+                    BenefitPlan plan = mapResultSetToPlan(rs);
+                    metrics.setRecordCount(1);
+                    metrics.setRecordSizeBytes(estimatePlanSize(plan));
+                    return Optional.of(plan);
                 }
             }
+            
+            return Optional.empty();
+        } finally {
+            metrics.complete();
         }
-        return Optional.empty();
     }
     
     /**
@@ -169,6 +188,8 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
      * @throws SQLException if database error occurs
      */
     public Optional<BenefitPlan> findByPlanCode(String planCode) throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "SELECT_BY_PLAN_CODE");
+        
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_CODE_SQL)) {
             
@@ -176,32 +197,48 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.of(mapResultSetToPlan(rs));
+                    BenefitPlan plan = mapResultSetToPlan(rs);
+                    metrics.setRecordCount(1);
+                    metrics.setRecordSizeBytes(estimatePlanSize(plan));
+                    return Optional.of(plan);
                 }
             }
+            
+            return Optional.empty();
+        } finally {
+            metrics.complete();
         }
-        return Optional.empty();
     }
     
     @Override
     public List<BenefitPlan> findAll() throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "SELECT_ALL");
         List<BenefitPlan> plans = new ArrayList<>();
         
         try (Connection conn = connector.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(FIND_ALL_SQL)) {
             
+            long totalSize = 0;
             while (rs.next()) {
-                plans.add(mapResultSetToPlan(rs));
+                BenefitPlan plan = mapResultSetToPlan(rs);
+                plans.add(plan);
+                totalSize += estimatePlanSize(plan);
             }
+            
+            metrics.setRecordCount(plans.size());
+            metrics.setRecordSizeBytes(totalSize);
+            LOGGER.log(Level.INFO, "Retrieved {0} plans", plans.size());
+            return plans;
+        } finally {
+            metrics.complete();
         }
-        
-        LOGGER.log(Level.INFO, "Retrieved {0} plans", plans.size());
-        return plans;
     }
     
     @Override
     public boolean update(BenefitPlan plan) throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "UPDATE");
+        
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(UPDATE_SQL)) {
             
@@ -233,15 +270,21 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             boolean updated = rowsAffected > 0;
             
             if (updated) {
+                metrics.setRecordCount(1);
+                metrics.setRecordSizeBytes(estimatePlanSize(plan));
                 LOGGER.log(Level.INFO, "Updated plan: {0}", plan.getPlanCode());
             }
             
             return updated;
+        } finally {
+            metrics.complete();
         }
     }
     
     @Override
     public boolean delete(UUID id) throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "DELETE");
+        
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(DELETE_SQL)) {
             
@@ -250,40 +293,53 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             boolean deleted = rowsAffected > 0;
             
             if (deleted) {
+                metrics.setRecordCount(1);
                 LOGGER.log(Level.INFO, "Deleted plan with ID: {0}", id);
             }
             
             return deleted;
+        } finally {
+            metrics.complete();
         }
     }
     
     @Override
     public long count() throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "COUNT");
+        
         try (Connection conn = connector.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(COUNT_SQL)) {
             
             if (rs.next()) {
-                return rs.getLong(1);
+                long count = rs.getLong(1);
+                metrics.setRecordCount(1); // COUNT operation returns 1 result
+                return count;
             }
+            
+            return 0;
+        } finally {
+            metrics.complete();
         }
-        return 0;
     }
     
     @Override
     public boolean exists(UUID id) throws SQLException {
+        PerformanceMetrics metrics = new PerformanceMetrics("BenefitPlan", "EXISTS");
+        
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(EXISTS_SQL)) {
             
             ps.setObject(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getBoolean(1);
-                }
+                boolean exists = rs.next() && rs.getBoolean(1);
+                metrics.setRecordCount(1); // EXISTS operation returns 1 result
+                return exists;
             }
+        } finally {
+            metrics.complete();
         }
-        return false;
     }
     
     /**
@@ -316,6 +372,38 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
     /**
      * Map ResultSet row to BenefitPlan object
      */
+    /**
+     * Estimates the size of a BenefitPlan record in bytes.
+     * This is an approximation based on the data types and string lengths.
+     *
+     * @param plan The BenefitPlan to estimate
+     * @return Estimated size in bytes
+     */
+    private long estimatePlanSize(BenefitPlan plan) {
+        long size = 0;
+        
+        // UUID (16 bytes)
+        size += 16;
+        
+        // Strings (2 bytes per character for UTF-16)
+        if (plan.getPlanCode() != null) size += plan.getPlanCode().length() * 2L;
+        if (plan.getPlanName() != null) size += plan.getPlanName().length() * 2L;
+        if (plan.getPlanType() != null) size += plan.getPlanType().length() * 2L;
+        if (plan.getPlanCategory() != null) size += plan.getPlanCategory().length() * 2L;
+        if (plan.getDescription() != null) size += plan.getDescription().length() * 2L;
+        
+        // Dates (8 bytes each)
+        if (plan.getEffectiveDate() != null) size += 8;
+        
+        // BigDecimal (approximately 16 bytes each for precision)
+        size += 12 * 16; // 12 BigDecimal fields
+        
+        // Booleans (1 byte each)
+        size += 3; // 3 boolean fields
+        
+        return size;
+    }
+    
     private BenefitPlan mapResultSetToPlan(ResultSet rs) throws SQLException {
         BenefitPlan plan = new BenefitPlan();
         
