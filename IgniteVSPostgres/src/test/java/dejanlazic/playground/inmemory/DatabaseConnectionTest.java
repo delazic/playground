@@ -82,33 +82,33 @@ class DatabaseConnectionTest {
     
     @Test
     @Order(4)
-    @DisplayName("Test 4: Query sample member data")
-    void testQueryMembers() {
-        System.out.println("\nTest 4: Querying sample member data...");
-        String memberQuery = "SELECT member_number, first_name, last_name, gender " +
-                           "FROM member LIMIT 5";
+    @DisplayName("Test 4: Query sample plan data")
+    void testQueryPlans() {
+        System.out.println("\nTest 4: Querying sample plan data...");
+        String planQuery = "SELECT plan_code, plan_name, plan_type, plan_category " +
+                           "FROM plan LIMIT 5";
         
         assertDoesNotThrow(() -> {
             try (Connection conn = connector.getConnection();
                  Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(memberQuery)) {
+                 ResultSet rs = stmt.executeQuery(planQuery)) {
                 
-                System.out.println("Sample members:");
-                System.out.println(String.format("%-15s %-20s %-20s %-8s", 
-                        "Member #", "First Name", "Last Name", "Gender"));
-                System.out.println("-".repeat(65));
+                System.out.println("Sample plans:");
+                System.out.println(String.format("%-20s %-35s %-15s %-15s",
+                        "Plan Code", "Plan Name", "Type", "Category"));
+                System.out.println("-".repeat(85));
                 
                 int count = 0;
                 while (rs.next()) {
                     count++;
-                    System.out.println(String.format("%-15s %-20s %-20s %-8s",
-                            rs.getString("member_number"),
-                            rs.getString("first_name"),
-                            rs.getString("last_name"),
-                            rs.getString("gender")));
+                    System.out.println(String.format("%-20s %-35s %-15s %-15s",
+                            rs.getString("plan_code"),
+                            rs.getString("plan_name"),
+                            rs.getString("plan_type"),
+                            rs.getString("plan_category")));
                 }
-                assertTrue(count > 0, "Should have at least one member");
-                System.out.println("✓ Query successful - found " + count + " members");
+                assertTrue(count > 0, "Should have at least one plan");
+                System.out.println("✓ Query successful - found " + count + " plans");
             }
         });
     }
@@ -118,7 +118,7 @@ class DatabaseConnectionTest {
     @DisplayName("Test 5: Count records in key tables")
     void testCountRecords() {
         System.out.println("\nTest 5: Counting records in key tables...");
-        String[] tables = {"member", "plan", "drug", "pharmacy", "claim"};
+        String[] tables = {"member", "plan", "drug", "pharmacy", "enrollment", "formulary"};
         
         assertDoesNotThrow(() -> {
             try (Connection conn = connector.getConnection();
@@ -154,5 +154,3 @@ class DatabaseConnectionTest {
         });
     }
 }
-
-// Made with Bob
