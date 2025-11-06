@@ -1350,11 +1350,293 @@ X-RateLimit-Reset: 1705334400
 
 ## Implementation
 
+### Development Environment Setup
+
+This section provides step-by-step instructions for setting up the PBM system development environment on macOS.
+
+#### Prerequisites
+
+- **macOS** (10.15 or later)
+- **Homebrew** (package manager)
+- **Docker Desktop** (for containerized services)
+- **Java 17+** (OpenJDK recommended)
+- **Maven 3.8+** (build tool)
+- **Git** (version control)
+
+#### Quick Start
+
+The fastest way to get started is using the automated setup script:
+
+```bash
+# Navigate to project directory
+cd IgniteVSPostgres
+
+# Make setup script executable
+chmod +x setup.sh
+
+# Run setup script
+./setup.sh
+```
+
+The setup script will:
+1. Check and install required dependencies (Homebrew, Docker, Java, Maven, PostgreSQL client)
+2. Create environment configuration file (.env)
+3. Start Docker containers (PostgreSQL, Redis, pgAdmin)
+4. Initialize database schema with sample data
+5. Verify the installation
+
+#### Manual Setup
+
+If you prefer to set up manually or need more control:
+
+##### 1. Install Dependencies
+
+```bash
+# Install Homebrew (if not already installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Docker Desktop
+# Download from: https://www.docker.com/products/docker-desktop
+
+# Install Java 17
+brew install openjdk@17
+
+# Install Maven
+brew install maven
+
+# Install PostgreSQL client (optional, for psql command)
+brew install postgresql@16
+
+# Install Docker Compose (if not included with Docker Desktop)
+brew install docker-compose
+```
+
+##### 2. Configure Environment
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env file with your preferred settings (optional)
+nano .env
+```
+
+##### 3. Start Services
+
+```bash
+# Start all services using Docker Compose
+docker-compose up -d
+
+# Or use Make commands
+make start
+```
+
+##### 4. Verify Installation
+
+```bash
+# Check PostgreSQL is running
+docker-compose exec postgres pg_isready -U pbm_user -d pbm_db
+
+# Connect to database
+psql -h localhost -p 5432 -U pbm_user -d pbm_db
+# Password: pbm_password
+
+# Check tables were created
+\dt
+
+# Exit psql
+\q
+```
+
+#### Service Access
+
+Once setup is complete, you can access the following services:
+
+**PostgreSQL Database:**
+- Host: `localhost`
+- Port: `5432`
+- Database: `pbm_db`
+- Username: `pbm_user`
+- Password: `pbm_password`
+
+**pgAdmin (Database Management UI):**
+- URL: http://localhost:5050
+- Email: `admin@pbm.local`
+- Password: `admin`
+
+**Redis Cache:**
+- Host: `localhost`
+- Port: `6379`
+
+#### Useful Commands
+
+The project includes a Makefile with convenient commands:
+
+```bash
+# Show all available commands
+make help
+
+# Start all services
+make start
+
+# Stop all services
+make stop
+
+# Restart all services
+make restart
+
+# View logs from all services
+make logs
+
+# View PostgreSQL logs only
+make logs-db
+
+# View Redis logs only
+make logs-redis
+
+# Connect to PostgreSQL shell
+make db-shell
+
+# Reset database (WARNING: deletes all data)
+make db-reset
+
+# Clean up everything (containers and volumes)
+make clean
+
+# Build Java application
+make build
+
+# Run tests
+make test
+
+# Open pgAdmin in browser
+make pgadmin
+```
+
+#### Database Schema
+
+The database schema is automatically created when Docker containers start. The initialization scripts are located in:
+
+- `database/init/01-create-schema.sql` - Creates all tables, indexes, and constraints
+- `database/init/02-seed-data.sql` - Populates sample data for testing
+
+**Database Structure:**
+- 15+ tables covering all PBM entities
+- UUID primary keys for all tables
+- Partitioned claims table by service_date
+- Comprehensive indexes for performance
+- Automatic timestamp triggers
+- Sample data including:
+  - 5 members
+  - 4 plans (Gold, Silver, Bronze, Medicare)
+  - 13 drugs (generic and brand)
+  - 5 pharmacies
+  - 15 sample claims
+  - Drug interactions
+  - Prior authorizations
+
+#### Connecting to PostgreSQL
+
+**Using psql (command line):**
+```bash
+psql -h localhost -p 5432 -U pbm_user -d pbm_db
+```
+
+**Using pgAdmin (web interface):**
+1. Open http://localhost:5050
+2. Login with admin@pbm.local / admin
+3. Add new server:
+   - Name: PBM Local
+   - Host: host.docker.internal (on Mac) or postgres (if in Docker network)
+   - Port: 5432
+   - Database: pbm_db
+   - Username: pbm_user
+   - Password: pbm_password
+
+**Using Java application:**
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/pbm_db
+spring.datasource.username=pbm_user
+spring.datasource.password=pbm_password
+```
+
+#### Troubleshooting
+
+**Docker not running:**
+```bash
+# Start Docker Desktop application
+open -a Docker
+
+# Wait for Docker to start, then retry
+docker-compose up -d
+```
+
+**Port conflicts:**
+```bash
+# Check what's using port 5432
+lsof -i :5432
+
+# Stop conflicting service or change port in docker-compose.yml
+```
+
+**Database connection refused:**
+```bash
+# Check PostgreSQL container status
+docker-compose ps
+
+# View PostgreSQL logs
+docker-compose logs postgres
+
+# Restart PostgreSQL
+docker-compose restart postgres
+```
+
+**Permission denied on setup.sh:**
+```bash
+# Make script executable
+chmod +x setup.sh
+```
+
+**Database schema not created:**
+```bash
+# Manually run initialization scripts
+docker-compose exec -T postgres psql -U pbm_user -d pbm_db < database/init/01-create-schema.sql
+docker-compose exec -T postgres psql -U pbm_user -d pbm_db < database/init/02-seed-data.sql
+```
+
+#### Next Steps
+
+After setting up the development environment:
+
+1. **Explore the Database:**
+   ```sql
+   -- View all tables
+   \dt
+   
+   -- Check sample members
+   SELECT * FROM member;
+   
+   -- Check sample claims
+   SELECT * FROM claim LIMIT 10;
+   ```
+
+2. **Review the Architecture:**
+   - Read the [System Architecture](#system-architecture) section
+   - Understand the [Database Design](#database-design)
+   - Review [API Specifications](#api-specifications)
+
+3. **Start Development:**
+   - Proceed to Phase 1 tasks below
+   - Implement core data models
+   - Set up CI/CD pipeline
+
+---
+
 ### Roadmap
 
 #### Phase 1: Foundation (Months 1-2)
-- [ ] Set up development environment
-- [ ] Create database schema
+- [x] Set up development environment
+- [x] Create database schema
 - [ ] Implement core data models
 - [ ] Set up CI/CD pipeline
 - [ ] Implement authentication service

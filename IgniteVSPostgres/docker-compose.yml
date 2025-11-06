@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pbm-postgres
+    environment:
+      POSTGRES_DB: pbm_db
+      POSTGRES_USER: pbm_user
+      POSTGRES_PASSWORD: pbm_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/scripts:/scripts
+    networks:
+      - pbm-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pbm_user -d pbm_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pbm-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pbm.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - pbm-network
+    depends_on:
+      - postgres
+
+  redis:
+    image: redis:7-alpine
+    container_name: pbm-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pbm-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  pbm-network:
+    driver: bridge
