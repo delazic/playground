@@ -1,14 +1,14 @@
 # PBM System - Project Status Report
 
-**Last Updated:** 2025-11-06 23:30 UTC
+**Last Updated:** 2025-11-07 00:42 UTC
 **Project:** Pharmacy Benefit Management (PBM) System for US Healthcare Market
-**Status:** Phase 1 - Advanced Progress
+**Status:** Phase 1 - Advanced Progress with Enrollment System
 
 ---
 
 ## Executive Summary
 
-Successfully designed and partially implemented a comprehensive Pharmacy Benefit Management (PBM) system. The project includes complete architecture documentation, database schema, Docker-based development environment, and initial data model implementation.
+Successfully designed and partially implemented a comprehensive Pharmacy Benefit Management (PBM) system. The project includes complete architecture documentation, database schema, Docker-based development environment, and comprehensive data model implementation with **10 million enrollment records**.
 
 ### Key Achievements
 - ✅ Complete system architecture design (15+ microservices)
@@ -18,7 +18,10 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
 - ✅ Complete DAO layer with performance metrics
 - ✅ BenefitPlan data model with CSV parser (34 US pharmacy plans)
 - ✅ Member data model with CSV parser (1,000,000 members)
+- ✅ **Enrollment data model with CSV parser (10,000,000 enrollments)** 🆕
+- ✅ **US healthcare enrollment rules implementation** 🆕
 - ✅ Performance metrics system with pipe-delimited CSV logging
+- ✅ Command-line parameter support for targeted CRUD operations
 - ✅ Extensive documentation (8+ major documents)
 
 ---
@@ -121,10 +124,14 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
   - Statistics generation (gender distribution, contact info)
   - 297 lines with progress logging
 
-#### 10. Application Integration (NEW)
-- **App.java** - Updated main application
+#### 10. Application Integration (UPDATED)
+- **App.java** - Enhanced main application
+  - Command-line parameter support: [operation] [entity]
+  - Operations: CREATE, READ, UPDATE, DELETE, ALL
+  - Entities: PLAN, MEMBER, ENROLLMENT
   - Loads and inserts benefit plans using BenefitPlanDAO
   - Loads and inserts members using MemberDAO
+  - **Loads and inserts enrollments using EnrollmentDAO** 🆕
   - Detailed console output with emojis and formatting
   - Performance reporting (time, throughput, counts)
   - Proper error handling and logging
@@ -141,22 +148,65 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
   - Tests schema, tables, and basic queries
   - All tests passing
 
+#### 12. Enrollment System (NEW) 🆕
+- **Enrollment.java** - Complete POJO model
+  - 9 fields: member_number, plan_code, group_number, dates, relationship, is_active
+  - Utility methods: isCurrentlyActive(), isExpired(), getDuration()
+  - Matches database schema with proper data types
+  - 147 lines of production-ready code
+
+- **EnrollmentConverter.java** - Multi-file CSV parser
+  - Loads 10,000,000 enrollments from 20 CSV files (~30MB each)
+  - Pattern matching for flexible file naming
+  - Processes 500,000 enrollments per file
+  - Progress logging and statistics
+  - 234 lines with comprehensive error handling
+
+- **EnrollmentDAO.java** - Complete DAO implementation
+  - All CRUD operations with performance metrics
+  - **Foreign key resolution using JOIN queries** (member_number → member_id, plan_code → plan_id)
+  - Batch insert optimized for 10M records
+  - Progress logging every 10,000 records
+  - Custom queries: countActive(), findByMemberNumber()
+  - 387 lines of production-ready code
+
+- **US Healthcare Enrollment Data** - 10 million realistic records
+  - Generated using Python script with Faker library
+  - Follows US healthcare enrollment rules:
+    - Single active coverage (70%)
+    - Dual coverage (15%)
+    - Plan transitions (10%)
+    - Historical enrollments (5%)
+  - 100% member coverage
+  - Proper date constraints and validation
+  - 20 CSV files totaling 589MB
+
+- **Makefile Targets** - Complete enrollment operations
+  - `make run-create-enrollment` - Insert 10M enrollments
+  - `make run-read-enrollment` - Display statistics
+  - `make run-update-enrollment` - Update sample enrollment
+  - `make run-delete-enrollment` - Delete sample enrollment
+  - `make run-all-enrollment` - Run all CRUD operations
+
 ### 🔄 In Progress
 
 #### Core Data Models
 - ✅ BenefitPlan (complete with DAO and tests)
 - ✅ Member (complete with DAO)
+- ✅ **Enrollment (complete with DAO)** 🆕
 - ⏳ Drug (pending)
 - ⏳ Pharmacy (pending)
 - ⏳ Claim (pending)
 
 ### ⏳ Pending Tasks
 
-1. **Member DAO Tests** - Create unit tests for MemberDAO
-2. **Additional Models** - Implement Drug, Pharmacy, Claim POJOs and DAOs
-3. **Service Layer** - Business logic services
-4. **CI/CD Pipeline** - Set up automated build and deployment
-5. **Authentication Service** - Implement JWT-based authentication
+1. **Enrollment DAO Tests** - Create unit tests for EnrollmentDAO
+2. **Member DAO Tests** - Create unit tests for MemberDAO
+3. **Full Integration Test** - Load all 10M enrollments and measure performance
+4. **Additional Models** - Implement Drug, Pharmacy, Claim POJOs and DAOs
+5. **Service Layer** - Business logic services
+6. **CI/CD Pipeline** - Set up automated build and deployment
+7. **Authentication Service** - Implement JWT-based authentication
 
 ---
 
@@ -209,14 +259,17 @@ IgniteVSPostgres/
 │   │   │       ├── DatabaseConnector.java         # Pure JDBC connector
 │   │   │       ├── model/
 │   │   │       │   ├── BenefitPlan.java          # Benefit plan POJO (284 lines)
-│   │   │       │   └── Member.java                # Member POJO (247 lines)
+│   │   │       │   ├── Member.java                # Member POJO (247 lines)
+│   │   │       │   └── Enrollment.java            # Enrollment POJO (147 lines) 🆕
 │   │   │       ├── converter/
 │   │   │       │   ├── BenefitPlanConverter.java # CSV parser (250 lines)
-│   │   │       │   └── MemberConverter.java       # Multi-file CSV parser (297 lines)
+│   │   │       │   ├── MemberConverter.java       # Multi-file CSV parser (297 lines)
+│   │   │       │   └── EnrollmentConverter.java   # Multi-file CSV parser (234 lines) 🆕
 │   │   │       └── dao/
 │   │   │           ├── BaseDAO.java               # Generic DAO interface (67 lines)
 │   │   │           ├── BenefitPlanDAO.java       # Plan DAO with metrics (443 lines)
 │   │   │           ├── MemberDAO.java             # Member DAO with metrics (429 lines)
+│   │   │           ├── EnrollmentDAO.java         # Enrollment DAO with metrics (387 lines) 🆕
 │   │   │           └── PerformanceMetrics.java    # Performance tracking (181 lines)
 │   │   └── resources/
 │   │       ├── database.properties                # DB configuration
@@ -236,7 +289,8 @@ IgniteVSPostgres/
 ├── logs/
 │   └── performance/
 │       ├── benefitplan_performance.log           # Plan operation metrics (CSV)
-│       └── member_performance.log                 # Member operation metrics (CSV)
+│       ├── member_performance.log                 # Member operation metrics (CSV)
+│       └── enrollment_performance.log             # Enrollment operation metrics (CSV) 🆕
 ├── database/
 │   ├── init/
 │   │   ├── 01-create-schema.sql                  # Database schema
@@ -392,22 +446,51 @@ docker-compose down -v && docker-compose up -d
 
 ---
 
-## Recent Accomplishments (This Session)
+## Recent Accomplishments (Current Session)
 
 ### Major Milestones
-1. ✅ **Refactored App.java** - Extracted 5 helper methods, reduced main() from 63 to 18 lines
-2. ✅ **Created DAO Layer** - BaseDAO interface + BenefitPlanDAO + MemberDAO implementations
-3. ✅ **Performance Metrics System** - Comprehensive tracking with CSV logging
-4. ✅ **Member Model** - Complete POJO with 14 fields matching database schema
-5. ✅ **Member Converter** - Multi-file CSV parser for 1M members
-6. ✅ **DAO Tests** - BenefitPlanDAOTest with 7 passing tests
-7. ✅ **App Integration** - Updated to load and insert both plans and members
+1. ✅ **Enrollment Data Generation** - Created 10,000,000 realistic enrollment records
+   - Python script with US healthcare enrollment rules
+   - 20 CSV files (~30MB each, 589MB total)
+   - Realistic scenarios: single coverage, dual coverage, plan transitions, historical
+   
+2. ✅ **Enrollment Model** - Complete POJO implementation
+   - 9 fields matching database schema
+   - Utility methods for enrollment status checks
+   - 147 lines of production code
+
+3. ✅ **EnrollmentConverter** - Multi-file CSV parser
+   - Loads 10M enrollments from 20 files
+   - Pattern matching for flexible file naming
+   - Progress logging and statistics
+   - 234 lines with error handling
+
+4. ✅ **EnrollmentDAO** - Complete DAO implementation
+   - Foreign key resolution using JOIN queries
+   - Batch insert optimized for 10M records
+   - Progress logging every 10K records
+   - Custom queries for active enrollments
+   - 387 lines of production code
+
+5. ✅ **App.java Enhancement** - Command-line parameter support
+   - Operations: CREATE, READ, UPDATE, DELETE, ALL
+   - Entities: PLAN, MEMBER, ENROLLMENT
+   - Enrollment CRUD operations integrated
+   - Compilation verified successful
+
+6. ✅ **Makefile Updates** - Complete enrollment targets
+   - `make run-create-enrollment` - Insert 10M enrollments
+   - `make run-read-enrollment` - Display statistics
+   - `make run-update-enrollment` - Update operations
+   - `make run-delete-enrollment` - Delete operations
+   - `make run-all-enrollment` - All CRUD operations
 
 ### Code Statistics
-- **Lines of Code Added:** ~2,000+ lines
-- **New Classes:** 6 (BaseDAO, BenefitPlanDAO, MemberDAO, PerformanceMetrics, Member, MemberConverter)
-- **Tests Created:** 7 DAO tests + 6 database tests (all passing)
-- **Documentation Updated:** Multiple files
+- **Lines of Code Added:** ~800+ lines
+- **New Classes:** 3 (Enrollment, EnrollmentConverter, EnrollmentDAO)
+- **Data Generated:** 10,000,000 enrollment records (589MB)
+- **CSV Files Created:** 20 enrollment files
+- **Documentation Updated:** README.md, PROJECT_STATUS.md, Makefile
 
 ## Next Steps
 

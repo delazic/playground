@@ -1476,41 +1476,48 @@ The project includes a Makefile with convenient commands:
 # Show all available commands
 make help
 
-# Start all services
-make start
+# Docker Services
+make start              # Start all services
+make stop               # Stop all services
+make restart            # Restart all services
+make logs               # View logs from all services
+make logs-db            # View PostgreSQL logs only
+make logs-redis         # View Redis logs only
 
-# Stop all services
-make stop
+# Database
+make db-shell           # Connect to PostgreSQL shell
+make db-reset           # Reset database (WARNING: deletes all data)
+make clean              # Clean up everything (containers and volumes)
+make pgadmin            # Open pgAdmin in browser
 
-# Restart all services
-make restart
+# Build & Test
+make build              # Build Java application
+make test               # Run tests
 
-# View logs from all services
-make logs
+# Run Application - All Entities
+make run                # Run all CRUD operations for all entities
+make run-all            # Same as 'make run'
 
-# View PostgreSQL logs only
-make logs-db
+# Plan Operations
+make run-create-plan    # CREATE: Insert benefit plans from CSV
+make run-read-plan      # READ: Display benefit plans
+make run-update-plan    # UPDATE: Update a sample plan
+make run-delete-plan    # DELETE: Delete a sample plan
+make run-all-plan       # Run all CRUD operations for plans
 
-# View Redis logs only
-make logs-redis
+# Member Operations
+make run-create-member  # CREATE: Insert members from CSV
+make run-read-member    # READ: Display member count
+make run-update-member  # UPDATE: Update a sample member
+make run-delete-member  # DELETE: Delete a sample member
+make run-all-member     # Run all CRUD operations for members
 
-# Connect to PostgreSQL shell
-make db-shell
-
-# Reset database (WARNING: deletes all data)
-make db-reset
-
-# Clean up everything (containers and volumes)
-make clean
-
-# Build Java application
-make build
-
-# Run tests
-make test
-
-# Open pgAdmin in browser
-make pgadmin
+# Enrollment Operations (NEW) 🆕
+make run-create-enrollment  # CREATE: Insert 10M enrollments from CSV
+make run-read-enrollment    # READ: Display enrollment statistics
+make run-update-enrollment  # UPDATE: Update a sample enrollment
+make run-delete-enrollment  # DELETE: Delete a sample enrollment
+make run-all-enrollment     # Run all CRUD operations for enrollments
 ```
 
 #### Database Schema
@@ -1527,13 +1534,18 @@ The database schema is automatically created when Docker containers start. The i
 - Comprehensive indexes for performance
 - Automatic timestamp triggers
 - Sample data including:
-  - 5 members
-  - 4 plans (Gold, Silver, Bronze, Medicare)
-  - 13 drugs (generic and brand)
-  - 5 pharmacies
-  - 15 sample claims
+  - 5 members (seed data)
+  - 4 plans (Gold, Silver, Bronze, Medicare - seed data)
+  - 13 drugs (generic and brand - seed data)
+  - 5 pharmacies (seed data)
+  - 15 sample claims (seed data)
   - Drug interactions
   - Prior authorizations
+
+**Large-Scale Test Data:**
+- 34 US pharmacy benefit plans (CSV)
+- 1,000,000 members (10 CSV files)
+- **10,000,000 enrollments (20 CSV files)** 🆕
 
 #### Connecting to PostgreSQL
 
@@ -1608,24 +1620,50 @@ docker-compose exec -T postgres psql -U pbm_user -d pbm_db < database/init/02-se
 
 After setting up the development environment:
 
-1. **Explore the Database:**
+1. **Load Test Data:**
+   
+   **Option A: Load All Data at Once (Recommended)** 🆕
+   ```bash
+   # Load all data in correct order: Plan → Member → Enrollment
+   # This respects foreign key relationships automatically
+   # ⚠️ Total time: 10-15 minutes for all 10+ million records
+   make load-all-data
+   ```
+   
+   **Option B: Load Data Step by Step**
+   ```bash
+   # Step 1: Load benefit plans (34 plans)
+   make run-create-plan
+   
+   # Step 2: Load members (1 million members)
+   make run-create-member
+   
+   # Step 3: Load enrollments (10 million enrollments)
+   # ⚠️ This will take 5-10 minutes
+   make run-create-enrollment
+   ```
+
+2. **Explore the Database:**
    ```sql
    -- View all tables
    \dt
    
-   -- Check sample members
-   SELECT * FROM member;
+   -- Check loaded data
+   SELECT COUNT(*) FROM plan;        -- Should show 34
+   SELECT COUNT(*) FROM member;      -- Should show 1,000,000
+   SELECT COUNT(*) FROM enrollment;  -- Should show 10,000,000 🆕
    
-   -- Check sample claims
-   SELECT * FROM claim LIMIT 10;
+   -- Check enrollment statistics 🆕
+   SELECT COUNT(*) FROM enrollment WHERE is_active = true;
+   SELECT relationship, COUNT(*) FROM enrollment GROUP BY relationship;
    ```
 
-2. **Review the Architecture:**
+3. **Review the Architecture:**
    - Read the [System Architecture](#system-architecture) section
    - Understand the [Database Design](#database-design)
    - Review [API Specifications](#api-specifications)
 
-3. **Start Development:**
+4. **Start Development:**
    - Proceed to Phase 1 tasks below
    - Implement core data models
    - Set up CI/CD pipeline
@@ -1637,7 +1675,7 @@ After setting up the development environment:
 #### Phase 1: Foundation (Months 1-2)
 - [x] Set up development environment
 - [x] Create database schema
-- [ ] Implement core data models
+- [x] Implement core data models (BenefitPlan, Member, Enrollment) 🆕
 - [ ] Set up CI/CD pipeline
 - [ ] Implement authentication service
 

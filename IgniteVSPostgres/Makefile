@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment load-all-data
 
 # Default target
 help:
@@ -26,6 +26,7 @@ help:
 	@echo "Run Application (CRUD Operations):"
 	@echo "  make run               - Run all CRUD operations for all entities"
 	@echo "  make run-all           - Same as 'make run'"
+	@echo "  make load-all-data     - Load ALL data in correct order (Plan→Member→Enrollment)"
 	@echo ""
 	@echo "Plan Operations:"
 	@echo "  make run-create-plan   - CREATE: Insert benefit plans from CSV"
@@ -40,6 +41,13 @@ help:
 	@echo "  make run-update-member - UPDATE: Update a sample member"
 	@echo "  make run-delete-member - DELETE: Delete a sample member"
 	@echo "  make run-all-member    - Run all CRUD operations for members"
+	@echo ""
+	@echo "Enrollment Operations:"
+	@echo "  make run-create-enrollment - CREATE: Insert enrollments from CSV (10M records)"
+	@echo "  make run-read-enrollment   - READ: Display enrollment statistics"
+	@echo "  make run-update-enrollment - UPDATE: Update a sample enrollment"
+	@echo "  make run-delete-enrollment - DELETE: Delete a sample enrollment"
+	@echo "  make run-all-enrollment    - Run all CRUD operations for enrollments"
 
 # Start all services
 start:
@@ -193,3 +201,85 @@ run-delete-member: build
 run-all-member: build
 	@echo "Running all CRUD operations for Members..."
 	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL MEMBER"
+
+# ============================================================================
+# Enrollment CRUD Operations
+# ============================================================================
+
+# CREATE: Insert enrollments from CSV (10 million records)
+run-create-enrollment: build
+	@echo "Running CREATE operation for Enrollments..."
+	@echo "⚠️  This will load and insert 10 million enrollment records"
+	@echo "⏳ Expected time: 5-10 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE ENROLLMENT"
+
+# READ: Display enrollment statistics
+run-read-enrollment: build
+	@echo "Running READ operation for Enrollments..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ ENROLLMENT"
+
+# UPDATE: Update a sample enrollment
+run-update-enrollment: build
+	@echo "Running UPDATE operation for Enrollments..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE ENROLLMENT"
+
+# DELETE: Delete a sample enrollment
+run-delete-enrollment: build
+	@echo "Running DELETE operation for Enrollments..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE ENROLLMENT"
+
+# Run all CRUD operations for enrollments
+run-all-enrollment: build
+	@echo "Running all CRUD operations for Enrollments..."
+	@echo "⚠️  This will load and insert 10 million enrollment records"
+	@echo "⏳ Expected time: 5-10 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL ENROLLMENT"
+
+# ============================================================================
+# Load All Data in Correct Order
+# ============================================================================
+
+# Load all data respecting foreign key relationships: Plan → Member → Enrollment
+load-all-data: build
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Loading ALL Data in Correct Order"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "This will load data in the following order to satisfy foreign key relationships:"
+	@echo "  1. Plans (34 records) - Referenced by enrollments"
+	@echo "  2. Members (1,000,000 records) - Referenced by enrollments"
+	@echo "  3. Enrollments (10,000,000 records) - References plans and members"
+	@echo ""
+	@echo "⚠️  Total expected time: 10-15 minutes"
+	@echo "⏳ Please be patient, this is a large dataset..."
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Step 1/3: Loading Benefit Plans..."
+	@echo "════════════════════════════════════════════════════════════════"
+	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE PLAN"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Step 2/3: Loading Members..."
+	@echo "════════════════════════════════════════════════════════════════"
+	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE MEMBER"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Step 3/3: Loading Enrollments..."
+	@echo "════════════════════════════════════════════════════════════════"
+	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE ENROLLMENT"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "✅ ALL DATA LOADED SUCCESSFULLY!"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "Summary:"
+	@echo "  ✓ Plans: 34 records"
+	@echo "  ✓ Members: 1,000,000 records"
+	@echo "  ✓ Enrollments: 10,000,000 records"
+	@echo ""
+	@echo "Verify data with:"
+	@echo "  make db-shell"
+	@echo "  SELECT COUNT(*) FROM plan;"
+	@echo "  SELECT COUNT(*) FROM member;"
+	@echo "  SELECT COUNT(*) FROM enrollment;"
+	@echo ""

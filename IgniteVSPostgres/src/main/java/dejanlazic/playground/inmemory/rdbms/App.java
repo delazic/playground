@@ -8,10 +8,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.converter.BenefitPlanConverter;
+import dejanlazic.playground.inmemory.rdbms.converter.EnrollmentConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.MemberConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
+import dejanlazic.playground.inmemory.rdbms.dao.EnrollmentDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.MemberDAO;
 import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
+import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
 import dejanlazic.playground.inmemory.rdbms.model.Member;
 
 /**
@@ -21,15 +24,15 @@ import dejanlazic.playground.inmemory.rdbms.model.Member;
  *   java App [operation] [entity]
  *
  * Operations: CREATE, READ, UPDATE, DELETE, ALL
- * Entities: PLAN, MEMBER
+ * Entities: PLAN, MEMBER, ENROLLMENT
  *
  * Examples:
- *   java App CREATE PLAN    - Insert benefit plans from CSV
- *   java App READ PLAN      - Read and display plans
- *   java App UPDATE PLAN    - Update a sample plan
- *   java App DELETE PLAN    - Delete a sample plan
- *   java App ALL PLAN       - Run all CRUD operations for plans
- *   java App                - Run all operations for all entities (default)
+ *   java App CREATE PLAN       - Insert benefit plans from CSV
+ *   java App READ PLAN         - Read and display plans
+ *   java App CREATE ENROLLMENT - Insert enrollments from CSV
+ *   java App READ ENROLLMENT   - Read and display enrollments
+ *   java App ALL ENROLLMENT    - Run all CRUD operations for enrollments
+ *   java App                   - Run all operations for all entities (default)
  */
 public class App {
     private static final Logger LOGGER = Logger.getLogger(App.class.getName());
@@ -59,6 +62,10 @@ public class App {
             
             if ("ALL".equals(entity) || "MEMBER".equals(entity)) {
                 executeMemberOperations(connector, operation);
+            }
+            
+            if ("ALL".equals(entity) || "ENROLLMENT".equals(entity)) {
+                executeEnrollmentOperations(connector, operation);
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error executing operations", e);
@@ -99,6 +106,25 @@ public class App {
                 readMembers(connector);
                 updateMember(connector);
                 deleteMember(connector);
+            }
+            default -> System.err.println("❌ Unknown operation: " + operation);
+        }
+    }
+    
+    /**
+     * Execute CRUD operations for Enrollment entity
+     */
+    private static void executeEnrollmentOperations(DatabaseConnector connector, String operation) {
+        switch (operation) {
+            case "CREATE" -> createEnrollments(connector);
+            case "READ" -> readEnrollments(connector);
+            case "UPDATE" -> updateEnrollment(connector);
+            case "DELETE" -> deleteEnrollment(connector);
+            case "ALL" -> {
+                createEnrollments(connector);
+                readEnrollments(connector);
+                updateEnrollment(connector);
+                deleteEnrollment(connector);
             }
             default -> System.err.println("❌ Unknown operation: " + operation);
         }
@@ -420,6 +446,142 @@ public class App {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to insert members", e);
             System.err.println("❌ Failed to insert members: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * CREATE operation for Enrollments
+     */
+    private static void createEnrollments(DatabaseConnector connector) {
+        List<Enrollment> enrollments = loadEnrollments();
+        if (enrollments != null) {
+            insertAndReportEnrollments(connector, enrollments);
+        }
+    }
+    
+    /**
+     * READ operation for Enrollments
+     */
+    private static void readEnrollments(DatabaseConnector connector) {
+        printHeader("Reading Enrollments");
+        EnrollmentDAO dao = new EnrollmentDAO(connector);
+        
+        try {
+            long totalCount = dao.count();
+            long activeCount = dao.countActive();
+            
+            System.out.println("📖 Total enrollments: " + String.format("%,d", totalCount));
+            System.out.println("✅ Active enrollments: " + String.format("%,d", activeCount));
+            System.out.println("📊 Inactive enrollments: " + String.format("%,d", (totalCount - activeCount)));
+            
+            if (totalCount > 0) {
+                System.out.println();
+                System.out.println("Sample enrollments (first 5):");
+                List<Enrollment> enrollments = dao.findAll();
+                int displayCount = Math.min(5, enrollments.size());
+                System.out.println("-".repeat(100));
+                System.out.printf("%-15s | %-15s | %-15s | %-12s | %-12s | %-10s%n",
+                    "Member", "Plan", "Group", "Effective", "Termination", "Active");
+                System.out.println("-".repeat(100));
+                
+                for (int i = 0; i < displayCount; i++) {
+                    Enrollment e = enrollments.get(i);
+                    System.out.printf("%-15s | %-15s | %-15s | %-12s | %-12s | %-10s%n",
+                        truncate(e.getMemberNumber(), 15),
+                        truncate(e.getPlanCode(), 15),
+                        truncate(e.getGroupNumber(), 15),
+                        e.getEffectiveDate(),
+                        e.getTerminationDate() != null ? e.getTerminationDate().toString() : "N/A",
+                        e.isActive() ? "Yes" : "No");
+                }
+                System.out.println("-".repeat(100));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read enrollments", e);
+            System.err.println("❌ Failed to read enrollments: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * UPDATE operation for Enrollments
+     */
+    private static void updateEnrollment(DatabaseConnector connector) {
+        printHeader("Updating an Enrollment");
+        System.out.println("⚠️  Enrollment UPDATE operation not yet implemented");
+        System.out.println("   (Would update termination date or active status)");
+        printSeparator();
+    }
+    
+    /**
+     * DELETE operation for Enrollments
+     */
+    private static void deleteEnrollment(DatabaseConnector connector) {
+        printHeader("Deleting an Enrollment");
+        System.out.println("⚠️  Enrollment DELETE operation not yet implemented");
+        System.out.println("   (Would delete a specific enrollment record)");
+        printSeparator();
+    }
+    
+    /**
+     * Load enrollments from CSV files
+     * @return List of enrollments, or null if loading fails
+     */
+    private static List<Enrollment> loadEnrollments() {
+        printHeader("Loading and Inserting Enrollments");
+        
+        EnrollmentConverter enrollmentConverter = new EnrollmentConverter();
+        try {
+            System.out.println("📂 Scanning for enrollment CSV files...");
+            int fileCount = enrollmentConverter.getAvailableFileCount();
+            System.out.println("✅ Found " + fileCount + " enrollment CSV files");
+            
+            System.out.println("📖 Loading enrollments from all files...");
+            System.out.println("⏳ This may take a few minutes for 10 million records...");
+            
+            List<Enrollment> enrollments = enrollmentConverter.loadAllEnrollments();
+            System.out.println("✅ Loaded " + String.format("%,d", enrollments.size()) + " enrollments from CSV files");
+            return enrollments;
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load enrollments", ex);
+            System.err.println("❌ Failed to load enrollments: " + ex.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Insert enrollments into database and report results using DAO
+     * @param connector Database connector
+     * @param enrollments List of enrollments to insert
+     */
+    private static void insertAndReportEnrollments(DatabaseConnector connector, List<Enrollment> enrollments) {
+        EnrollmentDAO dao = new EnrollmentDAO(connector);
+        
+        System.out.println("📝 Inserting " + String.format("%,d", enrollments.size()) + " enrollments into database...");
+        System.out.println("⏳ This will take several minutes for large datasets...");
+        System.out.println("💡 Progress updates every 10,000 records");
+        
+        long startTime = System.currentTimeMillis();
+        try {
+            int inserted = dao.insertBatch(enrollments);
+            long totalTime = System.currentTimeMillis() - startTime;
+            double seconds = totalTime / 1000.0;
+            double recordsPerSecond = inserted / seconds;
+            
+            System.out.println("✅ Successfully inserted " + String.format("%,d", inserted) + " enrollments");
+            System.out.println("⏱️  Total time: " + String.format("%.2f", seconds) + " seconds");
+            System.out.println("🚀 Throughput: " + String.format("%,.0f", recordsPerSecond) + " records/sec");
+            
+            // Display counts
+            long totalCount = dao.count();
+            long activeCount = dao.countActive();
+            System.out.println("📊 Total enrollments in database: " + String.format("%,d", totalCount));
+            System.out.println("✅ Active enrollments: " + String.format("%,d", activeCount));
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to insert enrollments", e);
+            System.err.println("❌ Failed to insert enrollments: " + e.getMessage());
+            e.printStackTrace();
         }
         printSeparator();
     }
