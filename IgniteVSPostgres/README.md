@@ -1512,12 +1512,19 @@ make run-update-member  # UPDATE: Update a sample member
 make run-delete-member  # DELETE: Delete a sample member
 make run-all-member     # Run all CRUD operations for members
 
-# Enrollment Operations (NEW) 🆕
+# Enrollment Operations 🆕
 make run-create-enrollment  # CREATE: Insert 10M enrollments from CSV
 make run-read-enrollment    # READ: Display enrollment statistics
 make run-update-enrollment  # UPDATE: Update a sample enrollment
 make run-delete-enrollment  # DELETE: Delete a sample enrollment
 make run-all-enrollment     # Run all CRUD operations for enrollments
+
+# Drug Operations 🆕
+make run-create-drug        # CREATE: Insert 20K drugs from CSV
+make run-read-drug          # READ: Display drug statistics
+make run-update-drug        # UPDATE: Update a sample drug
+make run-delete-drug        # DELETE: Delete a sample drug
+make run-all-drug           # Run all CRUD operations for drugs
 ```
 
 #### Database Schema
@@ -1546,6 +1553,7 @@ The database schema is automatically created when Docker containers start. The i
 - 34 US pharmacy benefit plans (CSV)
 - 1,000,000 members (10 CSV files)
 - **10,000,000 enrollments (20 CSV files)** 🆕
+- **20,000 US pharmacy drugs (1 CSV file)** 🆕
 
 #### Connecting to PostgreSQL
 
@@ -1624,7 +1632,7 @@ After setting up the development environment:
    
    **Option A: Load All Data at Once (Recommended)** 🆕
    ```bash
-   # Load all data in correct order: Plan → Member → Enrollment
+   # Load all data in correct order: Plan → Drug → Member → Enrollment
    # This respects foreign key relationships automatically
    # ⚠️ Total time: 10-15 minutes for all 10+ million records
    make load-all-data
@@ -1635,10 +1643,13 @@ After setting up the development environment:
    # Step 1: Load benefit plans (34 plans)
    make run-create-plan
    
-   # Step 2: Load members (1 million members)
+   # Step 2: Load drugs (20,000 drugs) 🆕
+   make run-create-drug
+   
+   # Step 3: Load members (1 million members)
    make run-create-member
    
-   # Step 3: Load enrollments (10 million enrollments)
+   # Step 4: Load enrollments (10 million enrollments)
    # ⚠️ This will take 5-10 minutes
    make run-create-enrollment
    ```
@@ -1650,12 +1661,18 @@ After setting up the development environment:
    
    -- Check loaded data
    SELECT COUNT(*) FROM plan;        -- Should show 34
+   SELECT COUNT(*) FROM drug;        -- Should show 20,000 🆕
    SELECT COUNT(*) FROM member;      -- Should show 1,000,000
-   SELECT COUNT(*) FROM enrollment;  -- Should show 10,000,000 🆕
+   SELECT COUNT(*) FROM enrollment;  -- Should show 10,000,000
    
-   -- Check enrollment statistics 🆕
+   -- Check enrollment statistics
    SELECT COUNT(*) FROM enrollment WHERE is_active = true;
    SELECT relationship, COUNT(*) FROM enrollment GROUP BY relationship;
+   
+   -- Check drug statistics 🆕
+   SELECT COUNT(*) FROM drug WHERE is_generic = true;
+   SELECT COUNT(*) FROM drug WHERE is_brand = true;
+   SELECT drug_class, COUNT(*) FROM drug GROUP BY drug_class ORDER BY COUNT(*) DESC LIMIT 10;
    ```
 
 3. **Review the Architecture:**
@@ -1675,7 +1692,8 @@ After setting up the development environment:
 #### Phase 1: Foundation (Months 1-2)
 - [x] Set up development environment
 - [x] Create database schema
-- [x] Implement core data models (BenefitPlan, Member, Enrollment) 🆕
+- [x] Implement core data models (Plan, Member, Enrollment, Drug) 🆕
+- [x] Generate large-scale test data (10M+ records) 🆕
 - [ ] Set up CI/CD pipeline
 - [ ] Implement authentication service
 

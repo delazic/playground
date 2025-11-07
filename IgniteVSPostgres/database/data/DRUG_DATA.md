@@ -45,7 +45,7 @@ This document describes the synthetic drug data generated for the PBM (Pharmacy 
 
 In the US healthcare system, a **drug product** is a specific formulation of a medication identified by:
 
-1. **NDC (National Drug Code)** - Unique 11-digit identifier
+1. **NDC (National Drug Code)** - Unique identifier (10-11 digits, stored as 14 characters with hyphens)
 2. **Active Ingredient** - Chemical entity that provides therapeutic effect
 3. **Strength** - Amount of active ingredient (e.g., 10mg, 500mg)
 4. **Dosage Form** - Physical form (tablet, capsule, injection, etc.)
@@ -70,9 +70,9 @@ In the US healthcare system, a **drug product** is a specific formulation of a m
 
 ### NDC Format
 
-The FDA assigns a unique **11-digit NDC** to every drug product:
+The FDA assigns a unique **NDC** to every drug product. The NDC consists of 10-11 digits, typically formatted with hyphens:
 
-**Format:** `XXXXX-XXXX-XX`
+**Format:** `XXXXX-XXXX-XX` (5-4-2 configuration, most common)
 
 ```
 NDC: 00002-1234-01
@@ -86,6 +86,8 @@ NDC: 00002-1234-01
 1. **Labeler Code (5 digits):** Identifies the manufacturer/distributor
 2. **Product Code (4 digits):** Identifies the specific drug formulation
 3. **Package Code (2 digits):** Identifies the package size/type
+
+**Note:** NDC codes can also use 4-4-2 or 5-3-2 configurations. In our database, we store NDCs as VARCHAR(14) to accommodate all formats with hyphens (e.g., "00002-1234-01" = 14 characters).
 
 ### NDC Examples
 
@@ -412,7 +414,7 @@ ndc_code,drug_name,generic_name,strength,dosage_form,route,manufacturer,drug_cla
 
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
-| `ndc_code` | VARCHAR(11) | Unique NDC identifier | 00002-1234-01 |
+| `ndc_code` | VARCHAR(14) | Unique NDC identifier with hyphens | 00002-1234-01 |
 | `drug_name` | VARCHAR(200) | Brand or generic name | Lipitor |
 | `generic_name` | VARCHAR(200) | Active ingredient name | atorvastatin |
 | `strength` | VARCHAR(50) | Drug strength | 40mg |
@@ -557,7 +559,8 @@ python3 generate_drugs.py
 
 1. **Unique NDC Codes**
    - Each ndc_code must be unique
-   - Format: XXXXX-XXXX-XX (11 digits with hyphens)
+   - Format: XXXXX-XXXX-XX (10-11 digits with hyphens, stored as VARCHAR(14))
+   - Common formats: 5-4-2, 4-4-2, or 5-3-2
 
 2. **Drug Type Consistency**
    - Exactly one of is_generic, is_brand must be true

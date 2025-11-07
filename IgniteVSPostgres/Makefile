@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment load-all-data
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug load-all-data
 
 # Default target
 help:
@@ -48,6 +48,13 @@ help:
 	@echo "  make run-update-enrollment - UPDATE: Update a sample enrollment"
 	@echo "  make run-delete-enrollment - DELETE: Delete a sample enrollment"
 	@echo "  make run-all-enrollment    - Run all CRUD operations for enrollments"
+	@echo ""
+	@echo "Drug Operations:"
+	@echo "  make run-create-drug       - CREATE: Insert drugs from CSV (20K records)"
+	@echo "  make run-read-drug         - READ: Display drug statistics"
+	@echo "  make run-update-drug       - UPDATE: Update a sample drug"
+	@echo "  make run-delete-drug       - DELETE: Delete a sample drug"
+	@echo "  make run-all-drug          - Run all CRUD operations for drugs"
 
 # Start all services
 start:
@@ -236,10 +243,43 @@ run-all-enrollment: build
 	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL ENROLLMENT"
 
 # ============================================================================
+# Drug CRUD Operations
+# ============================================================================
+
+# CREATE: Insert drugs from CSV (20,000 records)
+run-create-drug: build
+	@echo "Running CREATE operation for Drugs..."
+	@echo "⚠️  This will load and insert 20,000 drug records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE DRUG"
+
+# READ: Display drug statistics
+run-read-drug: build
+	@echo "Running READ operation for Drugs..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ DRUG"
+
+# UPDATE: Update a sample drug
+run-update-drug: build
+	@echo "Running UPDATE operation for Drugs..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE DRUG"
+
+# DELETE: Delete a sample drug
+run-delete-drug: build
+	@echo "Running DELETE operation for Drugs..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE DRUG"
+
+# Run all CRUD operations for drugs
+run-all-drug: build
+	@echo "Running all CRUD operations for Drugs..."
+	@echo "⚠️  This will load and insert 20,000 drug records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL DRUG"
+
+# ============================================================================
 # Load All Data in Correct Order
 # ============================================================================
 
-# Load all data respecting foreign key relationships: Plan → Member → Enrollment
+# Load all data respecting foreign key relationships: Plan → Drug → Member → Enrollment
 load-all-data: build
 	@echo "════════════════════════════════════════════════════════════════"
 	@echo "Loading ALL Data in Correct Order"
@@ -247,24 +287,30 @@ load-all-data: build
 	@echo ""
 	@echo "This will load data in the following order to satisfy foreign key relationships:"
 	@echo "  1. Plans (34 records) - Referenced by enrollments"
-	@echo "  2. Members (1,000,000 records) - Referenced by enrollments"
-	@echo "  3. Enrollments (10,000,000 records) - References plans and members"
+	@echo "  2. Drugs (20,000 records) - Referenced by claims/formularies"
+	@echo "  3. Members (1,000,000 records) - Referenced by enrollments"
+	@echo "  4. Enrollments (10,000,000 records) - References plans and members"
 	@echo ""
-	@echo "⚠️  Total expected time: 10-15 minutes"
+	@echo "⚠️  Total expected time: 12-17 minutes"
 	@echo "⏳ Please be patient, this is a large dataset..."
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Step 1/3: Loading Benefit Plans..."
+	@echo "Step 1/4: Loading Benefit Plans..."
 	@echo "════════════════════════════════════════════════════════════════"
 	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE PLAN"
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Step 2/3: Loading Members..."
+	@echo "Step 2/4: Loading Drugs..."
+	@echo "════════════════════════════════════════════════════════════════"
+	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE DRUG"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Step 3/4: Loading Members..."
 	@echo "════════════════════════════════════════════════════════════════"
 	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE MEMBER"
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Step 3/3: Loading Enrollments..."
+	@echo "Step 4/4: Loading Enrollments..."
 	@echo "════════════════════════════════════════════════════════════════"
 	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE ENROLLMENT"
 	@echo ""
@@ -274,12 +320,14 @@ load-all-data: build
 	@echo ""
 	@echo "Summary:"
 	@echo "  ✓ Plans: 34 records"
+	@echo "  ✓ Drugs: 20,000 records"
 	@echo "  ✓ Members: 1,000,000 records"
 	@echo "  ✓ Enrollments: 10,000,000 records"
 	@echo ""
 	@echo "Verify data with:"
 	@echo "  make db-shell"
 	@echo "  SELECT COUNT(*) FROM plan;"
+	@echo "  SELECT COUNT(*) FROM drug;"
 	@echo "  SELECT COUNT(*) FROM member;"
 	@echo "  SELECT COUNT(*) FROM enrollment;"
 	@echo ""

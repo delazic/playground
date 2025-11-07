@@ -8,12 +8,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.converter.BenefitPlanConverter;
+import dejanlazic.playground.inmemory.rdbms.converter.DrugConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.EnrollmentConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.MemberConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
+import dejanlazic.playground.inmemory.rdbms.dao.DrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.EnrollmentDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.MemberDAO;
 import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
+import dejanlazic.playground.inmemory.rdbms.model.Drug;
 import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
 import dejanlazic.playground.inmemory.rdbms.model.Member;
 
@@ -24,14 +27,16 @@ import dejanlazic.playground.inmemory.rdbms.model.Member;
  *   java App [operation] [entity]
  *
  * Operations: CREATE, READ, UPDATE, DELETE, ALL
- * Entities: PLAN, MEMBER, ENROLLMENT
+ * Entities: PLAN, DRUG, MEMBER, ENROLLMENT
  *
  * Examples:
  *   java App CREATE PLAN       - Insert benefit plans from CSV
  *   java App READ PLAN         - Read and display plans
+ *   java App CREATE DRUG       - Insert drugs from CSV
+ *   java App READ DRUG         - Read and display drugs
  *   java App CREATE ENROLLMENT - Insert enrollments from CSV
  *   java App READ ENROLLMENT   - Read and display enrollments
- *   java App ALL ENROLLMENT    - Run all CRUD operations for enrollments
+ *   java App ALL DRUG          - Run all CRUD operations for drugs
  *   java App                   - Run all operations for all entities (default)
  */
 public class App {
@@ -58,6 +63,10 @@ public class App {
         try {
             if ("ALL".equals(entity) || "PLAN".equals(entity)) {
                 executePlanOperations(connector, operation);
+            }
+            
+            if ("ALL".equals(entity) || "DRUG".equals(entity)) {
+                executeDrugOperations(connector, operation);
             }
             
             if ("ALL".equals(entity) || "MEMBER".equals(entity)) {
@@ -87,6 +96,25 @@ public class App {
                 readPlans(connector);
                 updatePlan(connector);
                 deletePlan(connector);
+            }
+            default -> System.err.println("❌ Unknown operation: " + operation);
+        }
+    }
+    
+    /**
+     * Execute CRUD operations for Drug entity
+     */
+    private static void executeDrugOperations(DatabaseConnector connector, String operation) {
+        switch (operation) {
+            case "CREATE" -> createDrugs(connector);
+            case "READ" -> readDrugs(connector);
+            case "UPDATE" -> updateDrug(connector);
+            case "DELETE" -> deleteDrug(connector);
+            case "ALL" -> {
+                createDrugs(connector);
+                readDrugs(connector);
+                updateDrug(connector);
+                deleteDrug(connector);
             }
             default -> System.err.println("❌ Unknown operation: " + operation);
         }
@@ -245,6 +273,151 @@ public class App {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to delete plan", e);
             System.err.println("❌ Failed to delete plan: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * CREATE operation for Drugs
+     */
+    private static void createDrugs(DatabaseConnector connector) {
+        List<Drug> drugs = loadDrugs();
+        if (drugs != null) {
+            insertAndReportDrugs(connector, drugs);
+        }
+    }
+    
+    /**
+     * READ operation for Drugs
+     */
+    private static void readDrugs(DatabaseConnector connector) {
+        printHeader("Reading Drugs");
+        DrugDAO dao = new DrugDAO(connector);
+        
+        try {
+            long count = dao.count();
+            System.out.println("📖 Found " + String.format("%,d", count) + " drugs in database");
+            System.out.println();
+            
+            if (count > 0) {
+                List<Drug> drugs = dao.findAll();
+                
+                // Display first 10 drugs
+                int displayCount = Math.min(10, drugs.size());
+                System.out.println("Displaying first " + displayCount + " drugs:");
+                System.out.println("-".repeat(120));
+                System.out.printf("%-15s | %-30s | %-25s | %-10s | %-15s | %-10s%n",
+                    "NDC Code", "Drug Name", "Generic Name", "Strength", "Dosage Form", "Type");
+                System.out.println("-".repeat(120));
+                
+                for (int i = 0; i < displayCount; i++) {
+                    Drug drug = drugs.get(i);
+                    System.out.printf("%-15s | %-30s | %-25s | %-10s | %-15s | %-10s%n",
+                        drug.getNdcCode(),
+                        truncate(drug.getDrugName(), 30),
+                        truncate(drug.getGenericName(), 25),
+                        truncate(drug.getStrength(), 10),
+                        truncate(drug.getDosageForm(), 15),
+                        drug.getDrugType());
+                }
+                System.out.println("-".repeat(120));
+                
+                // Display statistics
+                long genericCount = drugs.stream().filter(Drug::isGeneric).count();
+                long brandCount = drugs.stream().filter(Drug::isBrand).count();
+                long specialtyCount = drugs.stream().filter(Drug::isSpecialty).count();
+                
+                System.out.println();
+                System.out.println("Drug Type Distribution:");
+                System.out.println("  Generic:   " + String.format("%,d", genericCount) +
+                    " (" + String.format("%.1f%%", (genericCount * 100.0 / count)) + ")");
+                System.out.println("  Brand:     " + String.format("%,d", brandCount) +
+                    " (" + String.format("%.1f%%", (brandCount * 100.0 / count)) + ")");
+                System.out.println("  Specialty: " + String.format("%,d", specialtyCount) +
+                    " (" + String.format("%.1f%%", (specialtyCount * 100.0 / count)) + ")");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read drugs", e);
+            System.err.println("❌ Failed to read drugs: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * UPDATE operation for Drugs
+     */
+    private static void updateDrug(DatabaseConnector connector) {
+        printHeader("Updating a Drug");
+        DrugDAO dao = new DrugDAO(connector);
+        
+        try {
+            // Find first drug to update
+            List<Drug> drugs = dao.findAll();
+            if (drugs.isEmpty()) {
+                System.out.println("⚠️  No drugs found to update");
+                printSeparator();
+                return;
+            }
+            
+            Drug drug = drugs.get(0);
+            String originalName = drug.getDrugName();
+            java.math.BigDecimal originalAwp = drug.getAwpPrice();
+            
+            // Update the drug
+            drug.setDrugName(originalName + " (UPDATED)");
+            if (originalAwp != null) {
+                drug.setAwpPrice(originalAwp.add(java.math.BigDecimal.valueOf(10.00)));
+            }
+            
+            boolean updated = dao.update(drug);
+            if (updated) {
+                System.out.println("✅ Successfully updated drug: " + drug.getNdcCode());
+                System.out.println("   Old name: " + originalName);
+                System.out.println("   New name: " + drug.getDrugName());
+                if (originalAwp != null) {
+                    System.out.println("   Old AWP: $" + originalAwp);
+                    System.out.println("   New AWP: $" + drug.getAwpPrice());
+                }
+            } else {
+                System.out.println("⚠️  Drug not found or not updated");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to update drug", e);
+            System.err.println("❌ Failed to update drug: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * DELETE operation for Drugs
+     */
+    private static void deleteDrug(DatabaseConnector connector) {
+        printHeader("Deleting a Drug");
+        DrugDAO dao = new DrugDAO(connector);
+        
+        try {
+            // Find a drug to delete
+            List<Drug> drugs = dao.findAll();
+            if (drugs.isEmpty()) {
+                System.out.println("⚠️  No drugs found to delete");
+                printSeparator();
+                return;
+            }
+            
+            // Delete the last drug
+            Drug drugToDelete = drugs.get(drugs.size() - 1);
+            String ndcCode = drugToDelete.getNdcCode();
+            
+            boolean deleted = dao.delete(drugToDelete.getDrugId());
+            if (deleted) {
+                System.out.println("✅ Successfully deleted drug: " + ndcCode);
+                System.out.println("   Drug name: " + drugToDelete.getDrugName());
+            } else {
+                System.out.println("⚠️  Drug not found or not deleted");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to delete drug", e);
+            System.err.println("❌ Failed to delete drug: " + e.getMessage());
         }
         printSeparator();
     }
@@ -446,6 +619,57 @@ public class App {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to insert members", e);
             System.err.println("❌ Failed to insert members: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * Load drugs from CSV file
+     * @return List of drugs, or null if loading fails
+     */
+    private static List<Drug> loadDrugs() {
+        printHeader("Loading and Inserting Drugs");
+        
+        DrugConverter drugConverter = new DrugConverter();
+        try {
+            List<Drug> drugs = drugConverter.loadAllDrugs();
+            System.out.println("✅ Loaded " + String.format("%,d", drugs.size()) + " drugs from CSV file");
+            return drugs;
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load drugs", ex);
+            System.err.println("❌ Failed to load drugs: " + ex.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Insert drugs into database and report results using DAO
+     * @param connector Database connector
+     * @param drugs List of drugs to insert
+     */
+    private static void insertAndReportDrugs(DatabaseConnector connector, List<Drug> drugs) {
+        DrugDAO dao = new DrugDAO(connector);
+        
+        System.out.println("📝 Inserting " + String.format("%,d", drugs.size()) + " drugs into database...");
+        System.out.println("⏳ This may take a moment...");
+        
+        long startTime = System.currentTimeMillis();
+        try {
+            int inserted = dao.insertBatch(drugs);
+            long totalTime = System.currentTimeMillis() - startTime;
+            double seconds = totalTime / 1000.0;
+            double recordsPerSecond = inserted / seconds;
+            
+            System.out.println("✅ Successfully inserted " + String.format("%,d", inserted) + " drugs");
+            System.out.println("⏱️  Total time: " + String.format("%.2f", seconds) + " seconds");
+            System.out.println("🚀 Throughput: " + String.format("%,.0f", recordsPerSecond) + " records/sec");
+            
+            // Display count
+            long totalCount = dao.count();
+            System.out.println("📊 Total drugs in database: " + String.format("%,d", totalCount));
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to insert drugs", e);
+            System.err.println("❌ Failed to insert drugs: " + e.getMessage());
         }
         printSeparator();
     }

@@ -2,9 +2,8 @@ package dejanlazic.playground.inmemory.rdbms.converter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,19 +16,19 @@ import dejanlazic.playground.inmemory.rdbms.model.Member.Gender;
 
 /**
  * Converter to read and parse members from CSV files
- * Reads from us_pharmacy_members_01.csv through us_pharmacy_members_10.csv
+ * Reads from us_pharmacy_members_01.csv through us_pharmacy_members_10.csv from classpath resources
  */
 public class MemberConverter {
     
     private static final Logger LOGGER = Logger.getLogger(MemberConverter.class.getName());
-    private static final String CSV_FILE_PATTERN = "database/data/us_pharmacy_members_%02d.csv";
+    private static final String CSV_FILE_PATTERN = "data/us_pharmacy_members_%02d.csv";
     private static final int TOTAL_FILES = 10;
     private static final String CSV_DELIMITER = ",";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     
     /**
      * Load all members from all 10 CSV files
-     * 
+     *
      * @return List of Member objects
      * @throws IOException if files cannot be read
      */
@@ -38,17 +37,11 @@ public class MemberConverter {
         
         for (int fileNum = 1; fileNum <= TOTAL_FILES; fileNum++) {
             String fileName = String.format(CSV_FILE_PATTERN, fileNum);
-            Path filePath = Paths.get(fileName);
             
-            if (!Files.exists(filePath)) {
-                LOGGER.log(Level.WARNING, "CSV file not found: {0}", fileName);
-                continue;
-            }
-            
-            List<Member> membersFromFile = loadMembersFromFile(filePath, fileNum);
+            List<Member> membersFromFile = loadMembersFromResource(fileName, fileNum);
             allMembers.addAll(membersFromFile);
             
-            LOGGER.log(Level.INFO, "Loaded {0} members from {1}", 
+            LOGGER.log(Level.INFO, "Loaded {0} members from {1}",
                 new Object[]{membersFromFile.size(), fileName});
         }
         
@@ -57,34 +50,41 @@ public class MemberConverter {
     }
     
     /**
-     * Load members from a single CSV file
-     * 
-     * @param filePath Path to the CSV file
+     * Load members from a single CSV file from classpath
+     *
+     * @param resourceName Resource name in classpath
      * @param fileNum File number for logging
      * @return List of Member objects from this file
      * @throws IOException if file cannot be read
      */
-    private List<Member> loadMembersFromFile(Path filePath, int fileNum) throws IOException {
+    private List<Member> loadMembersFromResource(String resourceName, int fileNum) throws IOException {
         List<Member> members = new ArrayList<>();
         
-        try (BufferedReader reader = Files.newBufferedReader(filePath)) {
-            // Skip header line
-            String headerLine = reader.readLine();
-            if (headerLine == null) {
-                throw new IOException("CSV file is empty: " + filePath);
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourceName)) {
+            if (inputStream == null) {
+                LOGGER.log(Level.WARNING, "CSV file not found in classpath: {0}", resourceName);
+                return members;
             }
             
-            String line;
-            int lineNumber = 1;
-            while ((line = reader.readLine()) != null) {
-                lineNumber++;
-                try {
-                    Member member = parseLine(line);
-                    members.add(member);
-                } catch (Exception e) {
-                    LOGGER.log(Level.WARNING, "Error parsing file {0}, line {1}: {2}", 
-                        new Object[]{fileNum, lineNumber, e.getMessage()});
-                    // Continue processing other lines
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                // Skip header line
+                String headerLine = reader.readLine();
+                if (headerLine == null) {
+                    throw new IOException("CSV file is empty: " + resourceName);
+                }
+                
+                String line;
+                int lineNumber = 1;
+                while ((line = reader.readLine()) != null) {
+                    lineNumber++;
+                    try {
+                        Member member = parseLine(line);
+                        members.add(member);
+                    } catch (Exception e) {
+                        LOGGER.log(Level.WARNING, "Error parsing file {0}, line {1}: {2}",
+                            new Object[]{fileNum, lineNumber, e.getMessage()});
+                        // Continue processing other lines
+                    }
                 }
             }
         }
