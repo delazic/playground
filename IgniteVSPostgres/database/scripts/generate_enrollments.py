@@ -334,5 +334,3 @@ if __name__ == "__main__":
         print(f"\nERROR: {e}")
         import traceback
         traceback.print_exc()
-
-# Made with Bob
