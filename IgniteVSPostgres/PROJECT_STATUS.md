@@ -1,8 +1,8 @@
 # PBM System - Project Status Report
 
-**Last Updated:** 2025-11-07 00:42 UTC
+**Last Updated:** 2025-11-07 12:00 UTC
 **Project:** Pharmacy Benefit Management (PBM) System for US Healthcare Market
-**Status:** Phase 1 - Advanced Progress with Enrollment System
+**Status:** Phase 1 - Advanced Progress with Enrollment and Formulary Systems
 
 ---
 
@@ -18,8 +18,10 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
 - ✅ Complete DAO layer with performance metrics
 - ✅ BenefitPlan data model with CSV parser (34 US pharmacy plans)
 - ✅ Member data model with CSV parser (1,000,000 members)
-- ✅ **Enrollment data model with CSV parser (10,000,000 enrollments)** 🆕
-- ✅ **US healthcare enrollment rules implementation** 🆕
+- ✅ Enrollment data model with CSV parser (10,000,000 enrollments)
+- ✅ **Formulary data model with CSV parser** 🆕
+- ✅ **FormularyConverter with complete CRUD operations** 🆕
+- ✅ US healthcare enrollment rules implementation
 - ✅ Performance metrics system with pipe-delimited CSV logging
 - ✅ Command-line parameter support for targeted CRUD operations
 - ✅ Extensive documentation (8+ major documents)
@@ -128,10 +130,11 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
 - **App.java** - Enhanced main application
   - Command-line parameter support: [operation] [entity]
   - Operations: CREATE, READ, UPDATE, DELETE, ALL
-  - Entities: PLAN, MEMBER, ENROLLMENT
+  - Entities: PLAN, MEMBER, ENROLLMENT, FORMULARY 🆕
   - Loads and inserts benefit plans using BenefitPlanDAO
   - Loads and inserts members using MemberDAO
-  - **Loads and inserts enrollments using EnrollmentDAO** 🆕
+  - Loads and inserts enrollments using EnrollmentDAO
+  - **Loads and inserts formularies using FormularyDAO** 🆕
   - Detailed console output with emojis and formatting
   - Performance reporting (time, throughput, counts)
   - Proper error handling and logging
@@ -188,12 +191,51 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
   - `make run-delete-enrollment` - Delete sample enrollment
   - `make run-all-enrollment` - Run all CRUD operations
 
+#### 13. Formulary System (NEW) 🆕
+- **Formulary.java** - Complete POJO model
+  - 8 fields: plan_id, plan_code, formulary_name, effective_date, termination_date, is_active, timestamps
+  - **Includes both plan_id (database key) and plan_code (business key)** for JOIN-based resolution
+  - Utility methods: isCurrentlyActive(), isExpired(), isFutureDated(), getStatus()
+  - Date validation and status checking
+  - 220 lines of production-ready code
+
+- **FormularyConverter.java** - CSV parser with business key storage
+  - Loads formularies from us_pharmacy_formularies.csv
+  - Stores plan_code as business key (not random UUIDs)
+  - Parses 17 CSV fields (only stores relevant fields in model)
+  - Search methods: findByPlanId(), findByName(), findActiveFormularies()
+  - Statistics generation with status distribution
+  - 280+ lines with comprehensive error handling
+
+- **FormularyDAO.java** - Complete DAO implementation with JOIN-based foreign key resolution
+  - All CRUD operations with performance metrics
+  - **Foreign key resolution using JOIN queries** (plan_code → plan_id)
+  - Batch insert optimized for large datasets
+  - Custom queries: findByPlanId(), findActiveFormularies(), findByName()
+  - Date-based active formulary queries
+  - 479 lines of production-ready code
+
+- **App.java Integration** - Complete formulary CRUD operations
+  - CREATE: Load and insert formularies from CSV
+  - READ: Display formulary statistics with status distribution
+  - UPDATE: Modify formulary name and active status
+  - DELETE: Remove formulary by ID
+  - Performance metrics and detailed console output
+
+- **Makefile Targets** - Complete formulary operations
+  - `make run-create-formulary` - Insert formularies from CSV
+  - `make run-read-formulary` - Display statistics
+  - `make run-update-formulary` - Update sample formulary
+  - `make run-delete-formulary` - Delete sample formulary
+  - `make run-all-formulary` - Run all CRUD operations
+
 ### 🔄 In Progress
 
 #### Core Data Models
 - ✅ BenefitPlan (complete with DAO and tests)
 - ✅ Member (complete with DAO)
-- ✅ **Enrollment (complete with DAO)** 🆕
+- ✅ Enrollment (complete with DAO)
+- ✅ **Formulary (complete with DAO)** 🆕
 - ⏳ Drug (pending)
 - ⏳ Pharmacy (pending)
 - ⏳ Claim (pending)
@@ -260,16 +302,19 @@ IgniteVSPostgres/
 │   │   │       ├── model/
 │   │   │       │   ├── BenefitPlan.java          # Benefit plan POJO (284 lines)
 │   │   │       │   ├── Member.java                # Member POJO (247 lines)
-│   │   │       │   └── Enrollment.java            # Enrollment POJO (147 lines) 🆕
+│   │   │       │   ├── Enrollment.java            # Enrollment POJO (147 lines)
+│   │   │       │   └── Formulary.java             # Formulary POJO (220 lines) 🆕
 │   │   │       ├── converter/
 │   │   │       │   ├── BenefitPlanConverter.java # CSV parser (250 lines)
 │   │   │       │   ├── MemberConverter.java       # Multi-file CSV parser (297 lines)
-│   │   │       │   └── EnrollmentConverter.java   # Multi-file CSV parser (234 lines) 🆕
+│   │   │       │   ├── EnrollmentConverter.java   # Multi-file CSV parser (234 lines)
+│   │   │       │   └── FormularyConverter.java    # CSV parser with plan mapping (280+ lines) 🆕
 │   │   │       └── dao/
 │   │   │           ├── BaseDAO.java               # Generic DAO interface (67 lines)
 │   │   │           ├── BenefitPlanDAO.java       # Plan DAO with metrics (443 lines)
 │   │   │           ├── MemberDAO.java             # Member DAO with metrics (429 lines)
-│   │   │           ├── EnrollmentDAO.java         # Enrollment DAO with metrics (387 lines) 🆕
+│   │   │           ├── EnrollmentDAO.java         # Enrollment DAO with metrics (387 lines)
+│   │   │           ├── FormularyDAO.java          # Formulary DAO with metrics (479 lines) 🆕
 │   │   │           └── PerformanceMetrics.java    # Performance tracking (181 lines)
 │   │   └── resources/
 │   │       ├── database.properties                # DB configuration
@@ -290,7 +335,8 @@ IgniteVSPostgres/
 │   └── performance/
 │       ├── benefitplan_performance.log           # Plan operation metrics (CSV)
 │       ├── member_performance.log                 # Member operation metrics (CSV)
-│       └── enrollment_performance.log             # Enrollment operation metrics (CSV) 🆕
+│       ├── enrollment_performance.log             # Enrollment operation metrics (CSV)
+│       └── formulary_performance.log              # Formulary operation metrics (CSV) 🆕
 ├── database/
 │   ├── init/
 │   │   ├── 01-create-schema.sql                  # Database schema

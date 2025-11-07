@@ -1525,6 +1525,13 @@ make run-read-drug          # READ: Display drug statistics
 make run-update-drug        # UPDATE: Update a sample drug
 make run-delete-drug        # DELETE: Delete a sample drug
 make run-all-drug           # Run all CRUD operations for drugs
+
+# Formulary Operations 🆕
+make run-create-formulary   # CREATE: Insert formularies from CSV
+make run-read-formulary     # READ: Display formulary statistics
+make run-update-formulary   # UPDATE: Update a sample formulary
+make run-delete-formulary   # DELETE: Delete a sample formulary
+make run-all-formulary      # Run all CRUD operations for formularies
 ```
 
 #### Database Schema

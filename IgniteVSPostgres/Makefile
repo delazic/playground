@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug load-all-data
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary load-all-data
 
 # Default target
 help:
@@ -55,6 +55,13 @@ help:
 	@echo "  make run-update-drug       - UPDATE: Update a sample drug"
 	@echo "  make run-delete-drug       - DELETE: Delete a sample drug"
 	@echo "  make run-all-drug          - Run all CRUD operations for drugs"
+	@echo ""
+	@echo "Formulary Operations:"
+	@echo "  make run-create-formulary  - CREATE: Insert formularies from CSV"
+	@echo "  make run-read-formulary    - READ: Display formulary statistics"
+	@echo "  make run-update-formulary  - UPDATE: Update a sample formulary"
+	@echo "  make run-delete-formulary  - DELETE: Delete a sample formulary"
+	@echo "  make run-all-formulary     - Run all CRUD operations for formularies"
 
 # Start all services
 start:
@@ -266,6 +273,35 @@ run-update-drug: build
 # DELETE: Delete a sample drug
 run-delete-drug: build
 	@echo "Running DELETE operation for Drugs..."
+# ============================================================================
+# Formulary CRUD Operations
+# ============================================================================
+
+# CREATE: Insert formularies from CSV
+run-create-formulary: build
+	@echo "Running CREATE operation for Formularies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE FORMULARY"
+
+# READ: Display formulary statistics
+run-read-formulary: build
+	@echo "Running READ operation for Formularies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ FORMULARY"
+
+# UPDATE: Update a sample formulary
+run-update-formulary: build
+	@echo "Running UPDATE operation for Formularies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE FORMULARY"
+
+# DELETE: Delete a sample formulary
+run-delete-formulary: build
+	@echo "Running DELETE operation for Formularies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE FORMULARY"
+
+# Run all CRUD operations for formularies
+run-all-formulary: build
+	@echo "Running all CRUD operations for Formularies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL FORMULARY"
+
 	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE DRUG"
 
 # Run all CRUD operations for drugs

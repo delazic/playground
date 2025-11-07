@@ -10,14 +10,17 @@ import java.util.logging.Logger;
 import dejanlazic.playground.inmemory.rdbms.converter.BenefitPlanConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.DrugConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.EnrollmentConverter;
+import dejanlazic.playground.inmemory.rdbms.converter.FormularyConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.MemberConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.DrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.EnrollmentDAO;
+import dejanlazic.playground.inmemory.rdbms.dao.FormularyDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.MemberDAO;
 import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
 import dejanlazic.playground.inmemory.rdbms.model.Drug;
 import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
+import dejanlazic.playground.inmemory.rdbms.model.Formulary;
 import dejanlazic.playground.inmemory.rdbms.model.Member;
 
 /**
@@ -27,7 +30,7 @@ import dejanlazic.playground.inmemory.rdbms.model.Member;
  *   java App [operation] [entity]
  *
  * Operations: CREATE, READ, UPDATE, DELETE, ALL
- * Entities: PLAN, DRUG, MEMBER, ENROLLMENT
+ * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY
  *
  * Examples:
  *   java App CREATE PLAN       - Insert benefit plans from CSV
@@ -36,6 +39,8 @@ import dejanlazic.playground.inmemory.rdbms.model.Member;
  *   java App READ DRUG         - Read and display drugs
  *   java App CREATE ENROLLMENT - Insert enrollments from CSV
  *   java App READ ENROLLMENT   - Read and display enrollments
+ *   java App CREATE FORMULARY  - Insert formularies from CSV
+ *   java App READ FORMULARY    - Read and display formularies
  *   java App ALL DRUG          - Run all CRUD operations for drugs
  *   java App                   - Run all operations for all entities (default)
  */
@@ -75,6 +80,10 @@ public class App {
             
             if ("ALL".equals(entity) || "ENROLLMENT".equals(entity)) {
                 executeEnrollmentOperations(connector, operation);
+            }
+            
+            if ("ALL".equals(entity) || "FORMULARY".equals(entity)) {
+                executeFormularyOperations(connector, operation);
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error executing operations", e);
@@ -153,6 +162,25 @@ public class App {
                 readEnrollments(connector);
                 updateEnrollment(connector);
                 deleteEnrollment(connector);
+            }
+            default -> System.err.println("❌ Unknown operation: " + operation);
+        }
+    }
+    
+    /**
+     * Execute CRUD operations for Formulary entity
+     */
+    private static void executeFormularyOperations(DatabaseConnector connector, String operation) {
+        switch (operation) {
+            case "CREATE" -> createFormularies(connector);
+            case "READ" -> readFormularies(connector);
+            case "UPDATE" -> updateFormulary(connector);
+            case "DELETE" -> deleteFormulary(connector);
+            case "ALL" -> {
+                createFormularies(connector);
+                readFormularies(connector);
+                updateFormulary(connector);
+                deleteFormulary(connector);
             }
             default -> System.err.println("❌ Unknown operation: " + operation);
         }
@@ -806,6 +834,218 @@ public class App {
             LOGGER.log(Level.SEVERE, "Failed to insert enrollments", e);
             System.err.println("❌ Failed to insert enrollments: " + e.getMessage());
             e.printStackTrace();
+        }
+        printSeparator();
+    }
+    
+    /**
+     * CREATE operation for Formularies
+     */
+    private static void createFormularies(DatabaseConnector connector) {
+        List<Formulary> formularies = loadFormularies(connector);
+        if (formularies != null) {
+            insertAndReportFormularies(connector, formularies);
+        }
+    }
+    
+    /**
+     * READ operation for Formularies
+     */
+    private static void readFormularies(DatabaseConnector connector) {
+        printHeader("Reading Formularies");
+        FormularyDAO dao = new FormularyDAO(connector);
+        
+        try {
+            long count = dao.count();
+            System.out.println("📖 Found " + String.format("%,d", count) + " formularies in database");
+            System.out.println();
+            
+            if (count > 0) {
+                List<Formulary> formularies = dao.findAll();
+                
+                // Display first 10 formularies
+                int displayCount = Math.min(10, formularies.size());
+                System.out.println("Displaying first " + displayCount + " formularies:");
+                System.out.println("-".repeat(120));
+                System.out.printf("%-50s | %-15s | %-12s | %-12s | %-10s%n",
+                    "Formulary Name", "Plan ID", "Effective", "Termination", "Status");
+                System.out.println("-".repeat(120));
+                
+                for (int i = 0; i < displayCount; i++) {
+                    Formulary f = formularies.get(i);
+                    System.out.printf("%-50s | %-15s | %-12s | %-12s | %-10s%n",
+                        truncate(f.getFormularyName(), 50),
+                        f.getPlanId().toString().substring(0, 13) + "...",
+                        f.getEffectiveDate() != null ? f.getEffectiveDate().toString() : "N/A",
+                        f.getTerminationDate() != null ? f.getTerminationDate().toString() : "N/A",
+                        f.getStatus());
+                }
+                System.out.println("-".repeat(120));
+                
+                // Display statistics
+                long activeCount = formularies.stream().filter(Formulary::isActive).count();
+                long currentlyActiveCount = formularies.stream().filter(Formulary::isCurrentlyActive).count();
+                long expiredCount = formularies.stream().filter(Formulary::isExpired).count();
+                long futureCount = formularies.stream().filter(Formulary::isFutureDated).count();
+                
+                System.out.println();
+                System.out.println("Formulary Status Distribution:");
+                System.out.println("  Active (flag):     " + String.format("%,d", activeCount) +
+                    " (" + String.format("%.1f%%", (activeCount * 100.0 / count)) + ")");
+                System.out.println("  Currently Active:  " + String.format("%,d", currentlyActiveCount) +
+                    " (" + String.format("%.1f%%", (currentlyActiveCount * 100.0 / count)) + ")");
+                System.out.println("  Expired:           " + String.format("%,d", expiredCount) +
+                    " (" + String.format("%.1f%%", (expiredCount * 100.0 / count)) + ")");
+                System.out.println("  Future-dated:      " + String.format("%,d", futureCount) +
+                    " (" + String.format("%.1f%%", (futureCount * 100.0 / count)) + ")");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read formularies", e);
+            System.err.println("❌ Failed to read formularies: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * UPDATE operation for Formularies
+     */
+    private static void updateFormulary(DatabaseConnector connector) {
+        printHeader("Updating a Formulary");
+        FormularyDAO dao = new FormularyDAO(connector);
+        
+        try {
+            // Find first formulary to update
+            List<Formulary> formularies = dao.findAll();
+            if (formularies.isEmpty()) {
+                System.out.println("⚠️  No formularies found to update");
+                printSeparator();
+                return;
+            }
+            
+            Formulary formulary = formularies.get(0);
+            String originalName = formulary.getFormularyName();
+            boolean originalActive = formulary.isActive();
+            
+            // Update the formulary
+            formulary.setFormularyName(originalName + " (UPDATED)");
+            formulary.setActive(!originalActive);
+            
+            boolean updated = dao.update(formulary);
+            if (updated) {
+                System.out.println("✅ Successfully updated formulary");
+                System.out.println("   Old name: " + originalName);
+                System.out.println("   New name: " + formulary.getFormularyName());
+                System.out.println("   Old active status: " + originalActive);
+                System.out.println("   New active status: " + formulary.isActive());
+            } else {
+                System.out.println("⚠️  Formulary not found or not updated");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to update formulary", e);
+            System.err.println("❌ Failed to update formulary: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * DELETE operation for Formularies
+     */
+    private static void deleteFormulary(DatabaseConnector connector) {
+        printHeader("Deleting a Formulary");
+        FormularyDAO dao = new FormularyDAO(connector);
+        
+        try {
+            // Find a formulary to delete
+            List<Formulary> formularies = dao.findAll();
+            if (formularies.isEmpty()) {
+                System.out.println("⚠️  No formularies found to delete");
+                printSeparator();
+                return;
+            }
+            
+            // Delete the last formulary
+            Formulary formularyToDelete = formularies.get(formularies.size() - 1);
+            String formularyName = formularyToDelete.getFormularyName();
+            
+            boolean deleted = dao.delete(formularyToDelete.getFormularyId());
+            if (deleted) {
+                System.out.println("✅ Successfully deleted formulary: " + formularyName);
+            } else {
+                System.out.println("⚠️  Formulary not found or not deleted");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to delete formulary", e);
+            System.err.println("❌ Failed to delete formulary: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * Load formularies from CSV file
+     * NOTE: Plans must be loaded first as formularies reference plan_id
+     * @return List of formularies, or null if loading fails
+     */
+    private static List<Formulary> loadFormularies(DatabaseConnector connector) {
+        printHeader("Loading and Inserting Formularies");
+        
+        // Check if plans exist first
+        BenefitPlanDAO planDAO = new BenefitPlanDAO(connector);
+        try {
+            long planCount = planDAO.count();
+            if (planCount == 0) {
+                System.err.println("❌ ERROR: No plans found in database!");
+                System.err.println("   Formularies require existing plans (foreign key constraint).");
+                System.err.println("   Please run 'make run-create-plan' first to load plans.");
+                return null;
+            }
+            System.out.println("✓ Found " + planCount + " plans in database");
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to check plan count", e);
+            System.err.println("❌ Failed to verify plans exist: " + e.getMessage());
+            return null;
+        }
+        
+        FormularyConverter formularyConverter = new FormularyConverter();
+        try {
+            List<Formulary> formularies = formularyConverter.loadAllFormularies();
+            System.out.println("✅ Loaded " + String.format("%,d", formularies.size()) + " formularies from CSV file");
+            System.out.println("💡 Plan references will be resolved via database JOIN during insert");
+            
+            return formularies;
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load formularies", ex);
+            System.err.println("❌ Failed to load formularies: " + ex.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Insert formularies into database and report results using DAO
+     * @param connector Database connector
+     * @param formularies List of formularies to insert
+     */
+    private static void insertAndReportFormularies(DatabaseConnector connector, List<Formulary> formularies) {
+        FormularyDAO dao = new FormularyDAO(connector);
+        
+        System.out.println("📝 Inserting " + String.format("%,d", formularies.size()) + " formularies into database...");
+        
+        long startTime = System.currentTimeMillis();
+        try {
+            int inserted = dao.insertBatch(formularies);
+            long totalTime = System.currentTimeMillis() - startTime;
+            double seconds = totalTime / 1000.0;
+            double recordsPerSecond = inserted / seconds;
+            
+            System.out.println("✅ Successfully inserted " + String.format("%,d", inserted) + " formularies");
+            System.out.println("⏱️  Total time: " + String.format("%.2f", seconds) + " seconds");
+            System.out.println("🚀 Throughput: " + String.format("%,.0f", recordsPerSecond) + " records/sec");
+            
+            // Display count
+            long totalCount = dao.count();
+            System.out.println("📊 Total formularies in database: " + String.format("%,d", totalCount));
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to insert formularies", e);
+            System.err.println("❌ Failed to insert formularies: " + e.getMessage());
         }
         printSeparator();
     }
