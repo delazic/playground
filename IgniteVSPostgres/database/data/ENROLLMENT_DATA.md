@@ -1,17 +1,29 @@
-# Enrollment Data Generation Guide
+# Enrollment Data Documentation
 
 ## Overview
 
-This guide explains how to generate 10 million enrollment records for the PBM system following US healthcare enrollment rules.
+This dataset contains **10,000,000** synthetic enrollment records for the PBM system following US healthcare enrollment rules.
 
-## Prerequisites
+## File Information
+
+- **Location**: `IgniteVSPostgres/src/main/resources/data/`
+- **File Pattern**: `us_pharmacy_enrollments_01.csv` through `us_pharmacy_enrollments_20.csv`
+- **Total Files**: 20 files
+- **Records per File**: ~500,000 enrollments
+- **Total Records**: 10,000,000 enrollments
+- **Format**: CSV (Comma-Separated Values)
+- **Encoding**: UTF-8
+
+**Note:** CSV files are stored in the Java application's resources directory (`src/main/resources/data/`) and loaded via classpath using `getResourceAsStream()`. This ensures portability and proper packaging in JAR files.
+
+## Prerequisites (for regeneration)
 
 1. **Member data must exist first**
-   - Run member data generation to create `us_members_*.csv` files
+   - Member CSV files in `src/main/resources/data/`
    - The script will load member IDs from these files
 
 2. **Plan data must exist**
-   - Ensure `us_pharmacy_plans.csv` exists in the same directory
+   - Ensure `us_pharmacy_plans.csv` exists in `src/main/resources/data/`
    - The script will load plan codes from this file
 
 3. **Python 3.7+**
@@ -165,15 +177,21 @@ head -n 5 enrollments_001.csv
 cut -d',' -f1 enrollments_*.csv | sort -u | wc -l
 ```
 
-## Integration with Database
+## Loading into Database
 
-After generating the files, use the Java application to load them:
-
+**Using Java Application (Recommended):**
 ```bash
-# Create Enrollment model, converter, and DAO first
-# Then run:
+# Load all enrollments using the Java application
 make run-create-enrollment
 ```
+
+The Java application loads CSV files from the classpath (`src/main/resources/data/`) using the `EnrollmentConverter` class, which reads files via `getResourceAsStream()`.
+
+**Implementation Details:**
+- **Converter**: `EnrollmentConverter.java` - Loads 20 CSV files from classpath
+- **DAO**: `EnrollmentDAO.java` - Handles database batch operations
+- **Method**: `getResourceAsStream()` - Reads files from `src/main/resources/data/`
+- **Files**: Automatically loads `us_pharmacy_enrollments_01.csv` through `us_pharmacy_enrollments_20.csv`
 
 ## Troubleshooting
 

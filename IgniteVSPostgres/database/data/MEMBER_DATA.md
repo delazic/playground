@@ -6,6 +6,7 @@ This dataset contains **1,000,000** synthetic US healthcare members generated fo
 
 ## File Information
 
+- **Location**: `IgniteVSPostgres/src/main/resources/data/`
 - **File Pattern**: `us_pharmacy_members_01.csv` through `us_pharmacy_members_10.csv`
 - **Total Files**: 10 files
 - **Records per File**: 100,000 members
@@ -15,6 +16,8 @@ This dataset contains **1,000,000** synthetic US healthcare members generated fo
 - **Encoding**: UTF-8
 - **Total Records**: 1,000,000 members
 - **Generated**: November 6, 2024
+
+**Note:** CSV files are stored in the Java application's resources directory (`src/main/resources/data/`) and loaded via classpath using `getResourceAsStream()`. This ensures portability and proper packaging in JAR files.
 
 ## Schema
 
@@ -106,15 +109,17 @@ Data was generated using Python with the Faker library:
 
 ### Loading into PostgreSQL
 
-**Option 1: Load all files sequentially**
+**Using Java Application (Recommended):**
 ```bash
-for i in {01..10}; do
-  psql -U pbm_user -d pbm_db -c "COPY member (member_number, first_name, last_name, date_of_birth, gender, address, city, state, zip_code, phone, email) FROM '/path/to/us_pharmacy_members_${i}.csv' DELIMITER ',' CSV HEADER;"
-done
+# Load all members using the Java application
+make run-create-member
 ```
 
-**Option 2: Load individual files**
+The Java application loads CSV files from the classpath (`src/main/resources/data/`) using the `MemberConverter` class, which reads files via `getResourceAsStream()`.
+
+**Direct PostgreSQL Load (if CSV files are available on database server):**
 ```sql
+-- Note: This requires CSV files to be accessible to the PostgreSQL server
 COPY member (member_number, first_name, last_name, date_of_birth, gender,
              address, city, state, zip_code, phone, email)
 FROM '/path/to/us_pharmacy_members_01.csv'
@@ -122,11 +127,12 @@ DELIMITER ','
 CSV HEADER;
 ```
 
-Repeat for files 02 through 10.
-
 ### Using with Java Application
 
-The data can be loaded using the `MemberDAO` (to be implemented) or directly via JDBC batch operations.
+The data is loaded using:
+- **Converter**: `MemberConverter.java` - Loads CSV files from classpath
+- **DAO**: `MemberDAO.java` - Handles database operations
+- **Method**: `getResourceAsStream()` - Reads files from `src/main/resources/data/`
 
 ## Performance Considerations
 
@@ -154,9 +160,11 @@ This will create a new `us_pharmacy_members.csv` file with 1,000,000 new synthet
 
 ## Related Files
 
+- **CSV Files**: `../../src/main/resources/data/us_pharmacy_members_*.csv` - Member data files
+- **Converter**: `../../src/main/java/.../converter/MemberConverter.java` - Loads CSV from classpath
 - **Schema**: `../init/01-create-schema.sql` - Database table definitions
 - **Generator**: `../scripts/generate_members.py` - Python script to generate data
-- **Plans Data**: `us_pharmacy_plans.csv` - Related benefit plans dataset (see PLAN_DATA.md)
+- **Plans Data**: See PLAN_DATA.md for benefit plans information
 
 ## Statistics
 

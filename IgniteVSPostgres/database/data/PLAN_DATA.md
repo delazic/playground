@@ -7,8 +7,10 @@ This document describes the comprehensive set of US pharmacy benefit plans inclu
 ## File Location
 
 ```
-IgniteVSPostgres/database/data/us_pharmacy_plans.csv
+IgniteVSPostgres/src/main/resources/data/us_pharmacy_plans.csv
 ```
+
+**Note:** CSV files are stored in the Java application's resources directory and loaded via classpath. This ensures the data is packaged with the application and accessible regardless of the working directory.
 
 ## Plan Categories
 

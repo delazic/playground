@@ -1,9 +1,11 @@
 # US Healthcare Drug Data - Synthetic Data Documentation
 
-**Last Updated:** 2025-11-07  
-**Data File:** `us_pharmacy_drugs.csv`  
-**Total Records:** 20,000 drugs  
+**Last Updated:** 2025-11-07
+**Data File Location:** `IgniteVSPostgres/src/main/resources/data/us_pharmacy_drugs.csv`
+**Total Records:** 20,000 drugs
 **Generator Script:** `../scripts/generate_drugs.py`
+
+**Note:** CSV file is stored in the Java application's resources directory (`src/main/resources/data/`) and loaded via classpath using `getResourceAsStream()`. This ensures portability and proper packaging in JAR files.
 
 ---
 
