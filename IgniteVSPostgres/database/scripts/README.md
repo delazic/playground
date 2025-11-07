@@ -4,7 +4,56 @@ This directory contains Python scripts for generating test data for the PBM syst
 
 ## Scripts
 
-### 1. generate_members.py
+### 1. generate_formularies.py
+Generates 5,000 realistic US healthcare formularies.
+
+**Output:**
+- Single CSV file: `us_pharmacy_formularies.csv`
+- 5,000 formulary records
+- Total size: ~1.2MB
+
+**Market Segments:**
+- Medicare Part D: 800 formularies (16%)
+- Medicare Advantage: 3,000 formularies (60%)
+- Commercial: 500 formularies (10%)
+- Medicaid: 100 formularies (2%)
+- Federal Programs: 20 formularies (0.4%)
+- Regional/Specialty: 580 formularies (11.6%)
+
+**Usage:**
+```bash
+cd database/scripts
+python3 generate_formularies.py
+```
+
+### 2. generate_drugs.py
+Generates 20,000 realistic US healthcare drug products.
+
+**Output:**
+- Single CSV file: `us_pharmacy_drugs.csv`
+- 20,000 drug records
+- Total size: ~2.9MB
+
+**Drug Distribution:**
+- Generic drugs: 75% (~15,000)
+- Brand drugs: 23% (~4,600)
+- Specialty drugs: 2% (~400)
+- Controlled substances: 15% (~3,000)
+
+**Features:**
+- NDC (National Drug Code) format
+- Realistic pricing (AWP, WAC, MAC)
+- 14 therapeutic categories
+- 10 dosage forms
+- DEA schedules for controlled substances
+
+**Usage:**
+```bash
+cd database/scripts
+python3 generate_drugs.py
+```
+
+### 3. generate_members.py
 Generates 1,000,000 realistic US member records.
 
 **Output:**
@@ -18,7 +67,7 @@ cd database/scripts
 python3 generate_members.py
 ```
 
-### 2. generate_enrollments.py
+### 4. generate_enrollments.py
 Generates 10,000,000 realistic US healthcare enrollment records.
 
 **Prerequisites:**
@@ -53,10 +102,72 @@ chmod +x generate_enrollments.py
 **IMPORTANT:** Generate data in this order to satisfy dependencies:
 
 1. **Plans** (already exists as `us_pharmacy_plans.csv`)
-2. **Members** (run `generate_members.py`)
-3. **Enrollments** (run `generate_enrollments.py`)
+2. **Formularies** (run `generate_formularies.py`) - Links to plans
+3. **Drugs** (run `generate_drugs.py`) - Independent, can run anytime
+4. **Members** (run `generate_members.py`)
+5. **Enrollments** (run `generate_enrollments.py`) - Links to members and plans
+
+**Quick Start:**
+```bash
+cd database/scripts
+
+# Generate all data in correct order
+python3 generate_formularies.py
+python3 generate_drugs.py
+python3 generate_members.py
+python3 generate_enrollments.py
+```
 
 ## Configuration
+
+### generate_formularies.py Configuration
+
+Edit the script to customize:
+
+```python
+# Total formularies to generate
+TOTAL_FORMULARIES = 5000
+
+# Market segment distribution
+MEDICARE_PART_D = 800        # 16%
+MEDICARE_ADVANTAGE = 3000    # 60%
+COMMERCIAL = 500             # 10%
+MEDICAID = 100               # 2%
+FEDERAL = 20                 # 0.4%
+REGIONAL_SPECIALTY = 580     # 11.6%
+
+# Formulary type distribution
+FORMULARY_TYPES = {
+    'STANDARD': 0.40,      # 40%
+    'ENHANCED': 0.25,      # 25%
+    'BASIC': 0.20,         # 20%
+    'SPECIALTY': 0.10,     # 10%
+    'MAIL_ORDER': 0.05     # 5%
+}
+```
+
+### generate_drugs.py Configuration
+
+Edit the script to customize:
+
+```python
+# Total drugs to generate
+TOTAL_DRUGS = 20000
+
+# Drug type distribution
+GENERIC_PCT = 0.75        # 75% generic drugs
+BRAND_PCT = 0.23          # 23% brand drugs
+SPECIALTY_PCT = 0.02      # 2% specialty drugs
+
+# Controlled substance distribution
+CONTROLLED_PCT = 0.15     # 15% are controlled substances
+DEA_SCHEDULES = {
+    'II': 0.30,   # 30% - High potential for abuse
+    'III': 0.25,  # 25% - Moderate potential
+    'IV': 0.35,   # 35% - Low potential
+    'V': 0.10     # 10% - Lowest potential
+}
+```
 
 ### generate_enrollments.py Configuration
 
@@ -85,13 +196,22 @@ Relative to scripts directory:
 database/
 ├── data/
 │   ├── us_pharmacy_plans.csv
+│   ├── us_pharmacy_formularies.csv
+│   ├── us_pharmacy_drugs.csv
 │   ├── us_pharmacy_members_01.csv
 │   ├── ...
 │   ├── us_pharmacy_members_10.csv
 │   ├── us_pharmacy_enrollments_01.csv
 │   ├── ...
-│   └── us_pharmacy_enrollments_20.csv
+│   ├── us_pharmacy_enrollments_20.csv
+│   ├── PLAN_DATA.md                          # Plans documentation
+│   ├── FORMULARY_DATA.md                     # Formularies documentation
+│   ├── DRUG_DATA.md                          # Drugs documentation
+│   ├── MEMBER_DATA.md                        # Members documentation
+│   └── ENROLLMENT_DATA.md                    # Enrollments documentation
 └── scripts/
+    ├── generate_formularies.py
+    ├── generate_drugs.py
     ├── generate_members.py
     ├── generate_enrollments.py
     └── README.md
@@ -109,6 +229,12 @@ The scripts use only built-in Python modules:
 - `glob` - File pattern matching
 
 ## Troubleshooting
+
+### Error: "No plan CSV files found"
+
+**Problem:** `generate_formularies.py` cannot find plan files.
+
+**Solution:** Ensure `us_pharmacy_plans.csv` exists in `../data/` directory. The script will use default plan codes if not found.
 
 ### Error: "No member CSV files found"
 
@@ -129,29 +255,47 @@ python3 generate_members.py
 
 ### Slow generation
 
-**Problem:** Script takes a long time to generate 10M records.
+**Problem:** Script takes a long time to generate data.
 
 **Solution:** This is normal. Expected time:
+- Formulary generation: ~10-30 seconds
+- Drug generation: ~10-20 seconds
 - Member generation: ~2-3 minutes
 - Enrollment generation: ~5-10 minutes
 
-Progress indicators are shown every 50,000 members processed.
+Progress indicators are shown during generation.
 
 ## Data Validation
 
 After generation, verify the data:
 
 ```bash
-# Count files
+# Check formularies
+ls -l ../data/us_pharmacy_formularies.csv
+wc -l ../data/us_pharmacy_formularies.csv
+# Should show 5,001 (5,000 + 1 header)
+
+# Check drugs
+ls -l ../data/us_pharmacy_drugs.csv
+wc -l ../data/us_pharmacy_drugs.csv
+# Should show 20,001 (20,000 + 1 header)
+
+# Check members
+ls -l ../data/us_pharmacy_members_*.csv | wc -l
+# Should show 10
+
+# Check enrollments
 ls -l ../data/us_pharmacy_enrollments_*.csv | wc -l
 # Should show 20
 
 # Check file sizes
-du -h ../data/us_pharmacy_enrollments_*.csv
+du -h ../data/us_pharmacy_*.csv
 
-# Count total lines (excluding headers)
-wc -l ../data/us_pharmacy_enrollments_*.csv
-# Should show ~10,000,020 (10M + 20 headers)
+# Count total records
+wc -l ../data/us_pharmacy_formularies.csv      # 5,001
+wc -l ../data/us_pharmacy_drugs.csv            # 20,001
+wc -l ../data/us_pharmacy_members_*.csv        # ~1,000,010
+wc -l ../data/us_pharmacy_enrollments_*.csv    # ~10,000,020
 ```
 
 ## US Healthcare Enrollment Rules
