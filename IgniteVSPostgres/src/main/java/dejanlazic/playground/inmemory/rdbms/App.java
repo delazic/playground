@@ -11,16 +11,19 @@ import dejanlazic.playground.inmemory.rdbms.converter.BenefitPlanConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.DrugConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.EnrollmentConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.FormularyConverter;
+import dejanlazic.playground.inmemory.rdbms.converter.FormularyDrugConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.MemberConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.DrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.EnrollmentDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.FormularyDAO;
+import dejanlazic.playground.inmemory.rdbms.dao.FormularyDrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.MemberDAO;
 import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
 import dejanlazic.playground.inmemory.rdbms.model.Drug;
 import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
 import dejanlazic.playground.inmemory.rdbms.model.Formulary;
+import dejanlazic.playground.inmemory.rdbms.model.FormularyDrug;
 import dejanlazic.playground.inmemory.rdbms.model.Member;
 
 /**
@@ -30,19 +33,21 @@ import dejanlazic.playground.inmemory.rdbms.model.Member;
  *   java App [operation] [entity]
  *
  * Operations: CREATE, READ, UPDATE, DELETE, ALL
- * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY
+ * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY, FORMULARY_DRUG
  *
  * Examples:
- *   java App CREATE PLAN       - Insert benefit plans from CSV
- *   java App READ PLAN         - Read and display plans
- *   java App CREATE DRUG       - Insert drugs from CSV
- *   java App READ DRUG         - Read and display drugs
- *   java App CREATE ENROLLMENT - Insert enrollments from CSV
- *   java App READ ENROLLMENT   - Read and display enrollments
- *   java App CREATE FORMULARY  - Insert formularies from CSV
- *   java App READ FORMULARY    - Read and display formularies
- *   java App ALL DRUG          - Run all CRUD operations for drugs
- *   java App                   - Run all operations for all entities (default)
+ *   java App CREATE PLAN            - Insert benefit plans from CSV
+ *   java App READ PLAN              - Read and display plans
+ *   java App CREATE DRUG            - Insert drugs from CSV
+ *   java App READ DRUG              - Read and display drugs
+ *   java App CREATE ENROLLMENT      - Insert enrollments from CSV
+ *   java App READ ENROLLMENT        - Read and display enrollments
+ *   java App CREATE FORMULARY       - Insert formularies from CSV
+ *   java App READ FORMULARY         - Read and display formularies
+ *   java App CREATE FORMULARY_DRUG  - Insert formulary-drug relationships from CSV
+ *   java App READ FORMULARY_DRUG    - Read and display formulary-drug relationships
+ *   java App ALL DRUG               - Run all CRUD operations for drugs
+ *   java App                        - Run all operations for all entities (default)
  */
 public class App {
     private static final Logger LOGGER = Logger.getLogger(App.class.getName());
@@ -84,6 +89,10 @@ public class App {
             
             if ("ALL".equals(entity) || "FORMULARY".equals(entity)) {
                 executeFormularyOperations(connector, operation);
+            }
+            
+            if ("ALL".equals(entity) || "FORMULARY_DRUG".equals(entity)) {
+                executeFormularyDrugOperations(connector, operation);
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error executing operations", e);
@@ -181,6 +190,25 @@ public class App {
                 readFormularies(connector);
                 updateFormulary(connector);
                 deleteFormulary(connector);
+            }
+            default -> System.err.println("❌ Unknown operation: " + operation);
+        }
+    }
+    
+    /**
+     * Execute CRUD operations for FormularyDrug entity
+     */
+    private static void executeFormularyDrugOperations(DatabaseConnector connector, String operation) {
+        switch (operation) {
+            case "CREATE" -> createFormularyDrugs(connector);
+            case "READ" -> readFormularyDrugs(connector);
+            case "UPDATE" -> updateFormularyDrug(connector);
+            case "DELETE" -> deleteFormularyDrug(connector);
+            case "ALL" -> {
+                createFormularyDrugs(connector);
+                readFormularyDrugs(connector);
+                updateFormularyDrug(connector);
+                deleteFormularyDrug(connector);
             }
             default -> System.err.println("❌ Unknown operation: " + operation);
         }
@@ -1046,6 +1074,248 @@ public class App {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to insert formularies", e);
             System.err.println("❌ Failed to insert formularies: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * CREATE operation for FormularyDrugs
+     */
+    private static void createFormularyDrugs(DatabaseConnector connector) {
+        List<FormularyDrug> formularyDrugs = loadFormularyDrugs(connector);
+        if (formularyDrugs != null) {
+            insertAndReportFormularyDrugs(connector, formularyDrugs);
+        }
+    }
+    
+    /**
+     * READ operation for FormularyDrugs
+     */
+    private static void readFormularyDrugs(DatabaseConnector connector) {
+        printHeader("Reading Formulary-Drug Relationships");
+        FormularyDrugDAO dao = new FormularyDrugDAO(connector);
+        
+        try {
+            long count = dao.count();
+            System.out.println("📖 Found " + String.format("%,d", count) + " formulary-drug relationships in database");
+            System.out.println();
+            
+            if (count > 0) {
+                // Display tier distribution
+                System.out.println("Tier Distribution:");
+                System.out.println("-".repeat(60));
+                for (int tier = 1; tier <= 5; tier++) {
+                    long tierCount = dao.countByTier(tier);
+                    double pct = (tierCount * 100.0 / count);
+                    System.out.printf("  Tier %d: %,12d (%5.1f%%)%n", tier, tierCount, pct);
+                }
+                System.out.println("-".repeat(60));
+                
+                // Display sample relationships
+                System.out.println();
+                System.out.println("Sample relationships (first 10):");
+                List<FormularyDrug> formularyDrugs = dao.findAll();
+                int displayCount = Math.min(10, formularyDrugs.size());
+                System.out.println("-".repeat(120));
+                System.out.printf("%-38s | %-38s | %-6s | %-15s | %-30s%n",
+                    "Formulary ID", "Drug ID", "Tier", "Status", "Utilization Mgmt");
+                System.out.println("-".repeat(120));
+                
+                for (int i = 0; i < displayCount; i++) {
+                    FormularyDrug fd = formularyDrugs.get(i);
+                    System.out.printf("%-38s | %-38s | %-6d | %-15s | %-30s%n",
+                        fd.getFormularyId().toString().substring(0, 36) + "..",
+                        fd.getDrugId().toString().substring(0, 36) + "..",
+                        fd.getTier(),
+                        fd.getStatus(),
+                        truncate(fd.getUtilizationManagementSummary(), 30));
+                }
+                System.out.println("-".repeat(120));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read formulary-drug relationships", e);
+            System.err.println("❌ Failed to read formulary-drug relationships: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * UPDATE operation for FormularyDrugs
+     */
+    private static void updateFormularyDrug(DatabaseConnector connector) {
+        printHeader("Updating a Formulary-Drug Relationship");
+        FormularyDrugDAO dao = new FormularyDrugDAO(connector);
+        
+        try {
+            // Find first formulary-drug relationship to update
+            List<FormularyDrug> formularyDrugs = dao.findAll();
+            if (formularyDrugs.isEmpty()) {
+                System.out.println("⚠️  No formulary-drug relationships found to update");
+                printSeparator();
+                return;
+            }
+            
+            FormularyDrug formularyDrug = formularyDrugs.get(0);
+            int originalTier = formularyDrug.getTier();
+            boolean originalPriorAuth = formularyDrug.isRequiresPriorAuth();
+            
+            // Update the relationship
+            formularyDrug.setTier(Math.min(originalTier + 1, 5));
+            formularyDrug.setRequiresPriorAuth(!originalPriorAuth);
+            
+            boolean updated = dao.update(formularyDrug);
+            if (updated) {
+                System.out.println("✅ Successfully updated formulary-drug relationship");
+                System.out.println("   Old tier: " + originalTier);
+                System.out.println("   New tier: " + formularyDrug.getTier());
+                System.out.println("   Old prior auth: " + originalPriorAuth);
+                System.out.println("   New prior auth: " + formularyDrug.isRequiresPriorAuth());
+            } else {
+                System.out.println("⚠️  Formulary-drug relationship not found or not updated");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to update formulary-drug relationship", e);
+            System.err.println("❌ Failed to update formulary-drug relationship: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * DELETE operation for FormularyDrugs
+     */
+    private static void deleteFormularyDrug(DatabaseConnector connector) {
+        printHeader("Deleting a Formulary-Drug Relationship");
+        FormularyDrugDAO dao = new FormularyDrugDAO(connector);
+        
+        try {
+            // Find a formulary-drug relationship to delete
+            List<FormularyDrug> formularyDrugs = dao.findAll();
+            if (formularyDrugs.isEmpty()) {
+                System.out.println("⚠️  No formulary-drug relationships found to delete");
+                printSeparator();
+                return;
+            }
+            
+            // Delete the last relationship
+            FormularyDrug formularyDrugToDelete = formularyDrugs.get(formularyDrugs.size() - 1);
+            
+            boolean deleted = dao.delete(formularyDrugToDelete.getFormularyDrugId());
+            if (deleted) {
+                System.out.println("✅ Successfully deleted formulary-drug relationship");
+                System.out.println("   Tier: " + formularyDrugToDelete.getTier());
+                System.out.println("   Status: " + formularyDrugToDelete.getStatus());
+            } else {
+                System.out.println("⚠️  Formulary-drug relationship not found or not deleted");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to delete formulary-drug relationship", e);
+            System.err.println("❌ Failed to delete formulary-drug relationship: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * Load formulary-drug relationships from CSV files
+     * NOTE: Both formularies and drugs must be loaded first (foreign key constraints)
+     * @return List of formulary-drug relationships, or null if loading fails
+     */
+    private static List<FormularyDrug> loadFormularyDrugs(DatabaseConnector connector) {
+        printHeader("Loading and Inserting Formulary-Drug Relationships");
+        
+        // Check if formularies exist first
+        FormularyDAO formularyDAO = new FormularyDAO(connector);
+        try {
+            long formularyCount = formularyDAO.count();
+            if (formularyCount == 0) {
+                System.err.println("❌ ERROR: No formularies found in database!");
+                System.err.println("   Formulary-drug relationships require existing formularies (foreign key constraint).");
+                System.err.println("   Please run 'make run-create-formulary' first to load formularies.");
+                return null;
+            }
+            System.out.println("✓ Found " + String.format("%,d", formularyCount) + " formularies in database");
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to check formulary count", e);
+            System.err.println("❌ Failed to verify formularies exist: " + e.getMessage());
+            return null;
+        }
+        
+        // Check if drugs exist
+        DrugDAO drugDAO = new DrugDAO(connector);
+        try {
+            long drugCount = drugDAO.count();
+            if (drugCount == 0) {
+                System.err.println("❌ ERROR: No drugs found in database!");
+                System.err.println("   Formulary-drug relationships require existing drugs (foreign key constraint).");
+                System.err.println("   Please run 'make run-create-drug' first to load drugs.");
+                return null;
+            }
+            System.out.println("✓ Found " + String.format("%,d", drugCount) + " drugs in database");
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to check drug count", e);
+            System.err.println("❌ Failed to verify drugs exist: " + e.getMessage());
+            return null;
+        }
+        
+        FormularyDrugConverter formularyDrugConverter = new FormularyDrugConverter();
+        try {
+            System.out.println("📂 Scanning for formulary-drug CSV files...");
+            int fileCount = formularyDrugConverter.getAvailableFileCount();
+            System.out.println("✅ Found " + fileCount + " formulary-drug CSV files");
+            
+            System.out.println("📖 Loading formulary-drug relationships from all files...");
+            System.out.println("⏳ This may take several minutes for 10 million records...");
+            
+            List<FormularyDrug> formularyDrugs = formularyDrugConverter.loadAllFormularyDrugs();
+            System.out.println("✅ Loaded " + String.format("%,d", formularyDrugs.size()) + " formulary-drug relationships from CSV files");
+            System.out.println("💡 Foreign key references will be resolved via database JOINs during insert");
+            
+            return formularyDrugs;
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load formulary-drug relationships", ex);
+            System.err.println("❌ Failed to load formulary-drug relationships: " + ex.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Insert formulary-drug relationships into database and report results using DAO
+     * @param connector Database connector
+     * @param formularyDrugs List of formulary-drug relationships to insert
+     */
+    private static void insertAndReportFormularyDrugs(DatabaseConnector connector, List<FormularyDrug> formularyDrugs) {
+        FormularyDrugDAO dao = new FormularyDrugDAO(connector);
+        
+        System.out.println("📝 Inserting " + String.format("%,d", formularyDrugs.size()) + " formulary-drug relationships into database...");
+        System.out.println("⏳ This will take several minutes for large datasets...");
+        System.out.println("💡 Progress updates every 10,000 records");
+        
+        long startTime = System.currentTimeMillis();
+        try {
+            int inserted = dao.insertBatch(formularyDrugs);
+            long totalTime = System.currentTimeMillis() - startTime;
+            double seconds = totalTime / 1000.0;
+            double recordsPerSecond = inserted / seconds;
+            
+            System.out.println("✅ Successfully inserted " + String.format("%,d", inserted) + " formulary-drug relationships");
+            System.out.println("⏱️  Total time: " + String.format("%.2f", seconds) + " seconds");
+            System.out.println("🚀 Throughput: " + String.format("%,.0f", recordsPerSecond) + " records/sec");
+            
+            // Display count
+            long totalCount = dao.count();
+            System.out.println("📊 Total formulary-drug relationships in database: " + String.format("%,d", totalCount));
+            
+            // Display tier distribution
+            System.out.println();
+            System.out.println("Tier Distribution:");
+            for (int tier = 1; tier <= 5; tier++) {
+                long tierCount = dao.countByTier(tier);
+                double pct = (tierCount * 100.0 / totalCount);
+                System.out.printf("  Tier %d: %,12d (%5.1f%%)%n", tier, tierCount, pct);
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to insert formulary-drug relationships", e);
+            System.err.println("❌ Failed to insert formulary-drug relationships: " + e.getMessage());
+            e.printStackTrace();
         }
         printSeparator();
     }

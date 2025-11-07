@@ -89,6 +89,9 @@ public class FormularyConverter {
         
         Formulary formulary = new Formulary();
         
+        // Set formulary_code (unique identifier)
+        formulary.setFormularyCode(fields[0].trim());
+        
         // Set plan_code (business key) - will be resolved to plan_id by DAO
         String planCode = fields[2].trim();
         formulary.setPlanCode(planCode);

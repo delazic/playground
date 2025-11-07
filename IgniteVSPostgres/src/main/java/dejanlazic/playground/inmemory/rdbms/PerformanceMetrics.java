@@ -1,4 +1,4 @@
-package dejanlazic.playground.inmemory.rdbms.dao;
+package dejanlazic.playground.inmemory.rdbms;
 
 import java.io.IOException;
 import java.nio.file.Files;

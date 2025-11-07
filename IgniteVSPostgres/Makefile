@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary load-all-data
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug load-all-data
 
 # Default target
 help:
@@ -62,6 +62,13 @@ help:
 	@echo "  make run-update-formulary  - UPDATE: Update a sample formulary"
 	@echo "  make run-delete-formulary  - DELETE: Delete a sample formulary"
 	@echo "  make run-all-formulary     - Run all CRUD operations for formularies"
+	@echo ""
+	@echo "Formulary-Drug Operations:"
+	@echo "  make run-create-formulary-drug - CREATE: Insert formulary-drug relationships from CSV (10M records)"
+	@echo "  make run-read-formulary-drug   - READ: Display formulary-drug statistics"
+	@echo "  make run-update-formulary-drug - UPDATE: Update a sample formulary-drug relationship"
+	@echo "  make run-delete-formulary-drug - DELETE: Delete a sample formulary-drug relationship"
+	@echo "  make run-all-formulary-drug    - Run all CRUD operations for formulary-drug relationships"
 
 # Start all services
 start:
@@ -302,6 +309,39 @@ run-all-formulary: build
 	@echo "Running all CRUD operations for Formularies..."
 	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL FORMULARY"
 
+# ============================================================================
+# Formulary-Drug CRUD Operations
+# ============================================================================
+
+# CREATE: Insert formulary-drug relationships from CSV (10 million records)
+run-create-formulary-drug: build
+	@echo "Running CREATE operation for Formulary-Drug relationships..."
+	@echo "⚠️  This will load and insert 10 million formulary-drug relationship records"
+	@echo "⏳ Expected time: 5-10 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE FORMULARY_DRUG"
+
+# READ: Display formulary-drug statistics
+run-read-formulary-drug: build
+	@echo "Running READ operation for Formulary-Drug relationships..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ FORMULARY_DRUG"
+
+# UPDATE: Update a sample formulary-drug relationship
+run-update-formulary-drug: build
+	@echo "Running UPDATE operation for Formulary-Drug relationships..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE FORMULARY_DRUG"
+
+# DELETE: Delete a sample formulary-drug relationship
+run-delete-formulary-drug: build
+	@echo "Running DELETE operation for Formulary-Drug relationships..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE FORMULARY_DRUG"
+
+# Run all CRUD operations for formulary-drug relationships
+run-all-formulary-drug: build
+	@echo "Running all CRUD operations for Formulary-Drug relationships..."
+	@echo "⚠️  This will load and insert 10 million formulary-drug relationship records"
+	@echo "⏳ Expected time: 5-10 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL FORMULARY_DRUG"
+
 	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE DRUG"
 
 # Run all CRUD operations for drugs
@@ -322,33 +362,45 @@ load-all-data: build
 	@echo "════════════════════════════════════════════════════════════════"
 	@echo ""
 	@echo "This will load data in the following order to satisfy foreign key relationships:"
-	@echo "  1. Plans (34 records) - Referenced by enrollments"
-	@echo "  2. Drugs (20,000 records) - Referenced by claims/formularies"
+	@echo "  1. Plans (34 records) - Referenced by enrollments and formularies"
+	@echo "  2. Drugs (20,000 records) - Referenced by formulary-drug relationships"
 	@echo "  3. Members (1,000,000 records) - Referenced by enrollments"
 	@echo "  4. Enrollments (10,000,000 records) - References plans and members"
+	@echo "  5. Formularies - References plans"
+	@echo "  6. Formulary-Drug Relationships (10,000,000 records) - References formularies and drugs"
 	@echo ""
-	@echo "⚠️  Total expected time: 12-17 minutes"
+	@echo "⚠️  Total expected time: 20-30 minutes"
 	@echo "⏳ Please be patient, this is a large dataset..."
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Step 1/4: Loading Benefit Plans..."
+	@echo "Step 1/6: Loading Benefit Plans..."
 	@echo "════════════════════════════════════════════════════════════════"
 	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE PLAN"
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Step 2/4: Loading Drugs..."
+	@echo "Step 2/6: Loading Drugs..."
 	@echo "════════════════════════════════════════════════════════════════"
 	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE DRUG"
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Step 3/4: Loading Members..."
+	@echo "Step 3/6: Loading Members..."
 	@echo "════════════════════════════════════════════════════════════════"
 	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE MEMBER"
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Step 4/4: Loading Enrollments..."
+	@echo "Step 4/6: Loading Enrollments..."
 	@echo "════════════════════════════════════════════════════════════════"
 	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE ENROLLMENT"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Step 5/6: Loading Formularies..."
+	@echo "════════════════════════════════════════════════════════════════"
+	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE FORMULARY"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Step 6/6: Loading Formulary-Drug Relationships..."
+	@echo "════════════════════════════════════════════════════════════════"
+	@mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE FORMULARY_DRUG"
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════"
 	@echo "✅ ALL DATA LOADED SUCCESSFULLY!"
@@ -359,6 +411,8 @@ load-all-data: build
 	@echo "  ✓ Drugs: 20,000 records"
 	@echo "  ✓ Members: 1,000,000 records"
 	@echo "  ✓ Enrollments: 10,000,000 records"
+	@echo "  ✓ Formularies: ~34 records"
+	@echo "  ✓ Formulary-Drug Relationships: 10,000,000 records"
 	@echo ""
 	@echo "Verify data with:"
 	@echo "  make db-shell"
@@ -366,4 +420,6 @@ load-all-data: build
 	@echo "  SELECT COUNT(*) FROM drug;"
 	@echo "  SELECT COUNT(*) FROM member;"
 	@echo "  SELECT COUNT(*) FROM enrollment;"
+	@echo "  SELECT COUNT(*) FROM formulary;"
+	@echo "  SELECT COUNT(*) FROM formulary_drug;"
 	@echo ""

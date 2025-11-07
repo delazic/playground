@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.DatabaseConnector;
+import dejanlazic.playground.inmemory.rdbms.PerformanceMetrics;
 import dejanlazic.playground.inmemory.rdbms.model.Drug;
 
 /**

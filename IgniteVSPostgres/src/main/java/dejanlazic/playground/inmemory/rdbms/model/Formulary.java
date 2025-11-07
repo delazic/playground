@@ -14,6 +14,7 @@ public class Formulary {
     private UUID formularyId;
     private UUID planId;
     private String planCode;  // Business key from CSV, used to lookup planId
+    private String formularyCode;  // Unique formulary code from CSV
     private String formularyName;
     private LocalDate effectiveDate;
     private LocalDate terminationDate;
@@ -63,6 +64,14 @@ public class Formulary {
     
     public void setPlanCode(String planCode) {
         this.planCode = planCode;
+    }
+    
+    public String getFormularyCode() {
+        return formularyCode;
+    }
+    
+    public void setFormularyCode(String formularyCode) {
+        this.formularyCode = formularyCode;
     }
     
     public String getFormularyName() {

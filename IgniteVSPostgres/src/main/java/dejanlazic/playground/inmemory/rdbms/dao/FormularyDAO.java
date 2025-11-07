@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.DatabaseConnector;
+import dejanlazic.playground.inmemory.rdbms.PerformanceMetrics;
 import dejanlazic.playground.inmemory.rdbms.model.Formulary;
 
 /**
@@ -31,11 +32,11 @@ public class FormularyDAO implements BaseDAO<Formulary, UUID> {
     // SQL Statements
     private static final String INSERT_SQL = """
         INSERT INTO formulary (
-            plan_id, formulary_name, effective_date, termination_date, is_active
+            plan_id, formulary_code, formulary_name, effective_date, termination_date, is_active
         )
         SELECT
             p.plan_id,
-            ?, ?, ?, ?
+            ?, ?, ?, ?, ?
         FROM plan p
         WHERE p.plan_code = ?
         RETURNING formulary_id
@@ -406,6 +407,7 @@ public class FormularyDAO implements BaseDAO<Formulary, UUID> {
      */
     private void setFormularyParameters(PreparedStatement ps, Formulary formulary) throws SQLException {
         int idx = 1;
+        ps.setString(idx++, formulary.getFormularyCode());
         ps.setString(idx++, formulary.getFormularyName());
         ps.setDate(idx++, formulary.getEffectiveDate() != null ? Date.valueOf(formulary.getEffectiveDate()) : null);
         ps.setDate(idx++, formulary.getTerminationDate() != null ? Date.valueOf(formulary.getTerminationDate()) : null);

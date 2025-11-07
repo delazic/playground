@@ -1532,6 +1532,13 @@ make run-read-formulary     # READ: Display formulary statistics
 make run-update-formulary   # UPDATE: Update a sample formulary
 make run-delete-formulary   # DELETE: Delete a sample formulary
 make run-all-formulary      # Run all CRUD operations for formularies
+
+# Formulary-Drug Operations 🆕
+make run-create-formulary-drug  # CREATE: Insert formulary-drug relationships from CSV (10M records)
+make run-read-formulary-drug    # READ: Display formulary-drug statistics
+make run-update-formulary-drug  # UPDATE: Update a sample formulary-drug relationship
+make run-delete-formulary-drug  # DELETE: Delete a sample formulary-drug relationship
+make run-all-formulary-drug     # Run all CRUD operations for formulary-drug relationships
 ```
 
 #### Database Schema
@@ -1561,6 +1568,7 @@ The database schema is automatically created when Docker containers start. The i
 - 1,000,000 members (10 CSV files)
 - **10,000,000 enrollments (20 CSV files)** 🆕
 - **20,000 US pharmacy drugs (1 CSV file)** 🆕
+- **10,000,000 formulary-drug relationships (64 CSV files)** 🆕
 
 #### Connecting to PostgreSQL
 
@@ -1680,6 +1688,12 @@ After setting up the development environment:
    SELECT COUNT(*) FROM drug WHERE is_generic = true;
    SELECT COUNT(*) FROM drug WHERE is_brand = true;
    SELECT drug_class, COUNT(*) FROM drug GROUP BY drug_class ORDER BY COUNT(*) DESC LIMIT 10;
+   
+   -- Check formulary-drug statistics 🆕
+   SELECT COUNT(*) FROM formulary_drug;
+   SELECT tier, COUNT(*) FROM formulary_drug GROUP BY tier ORDER BY tier;
+   SELECT status, COUNT(*) FROM formulary_drug GROUP BY status;
+   SELECT COUNT(*) FROM formulary_drug WHERE requires_prior_auth = true;
    ```
 
 3. **Review the Architecture:**
@@ -1699,8 +1713,9 @@ After setting up the development environment:
 #### Phase 1: Foundation (Months 1-2)
 - [x] Set up development environment
 - [x] Create database schema
-- [x] Implement core data models (Plan, Member, Enrollment, Drug) 🆕
-- [x] Generate large-scale test data (10M+ records) 🆕
+- [x] Implement core data models (Plan, Member, Enrollment, Drug, Formulary, FormularyDrug) 🆕
+- [x] Generate large-scale test data (20M+ records) 🆕
+- [x] Refactor PerformanceMetrics to rdbms package 🆕
 - [ ] Set up CI/CD pipeline
 - [ ] Implement authentication service
 

@@ -1,14 +1,14 @@
 # PBM System - Project Status Report
 
-**Last Updated:** 2025-11-07 12:00 UTC
+**Last Updated:** 2025-11-07 13:30 UTC
 **Project:** Pharmacy Benefit Management (PBM) System for US Healthcare Market
-**Status:** Phase 1 - Advanced Progress with Enrollment and Formulary Systems
+**Status:** Phase 1 - Advanced Progress with Complete Formulary-Drug Relationship System
 
 ---
 
 ## Executive Summary
 
-Successfully designed and partially implemented a comprehensive Pharmacy Benefit Management (PBM) system. The project includes complete architecture documentation, database schema, Docker-based development environment, and comprehensive data model implementation with **10 million enrollment records**.
+Successfully designed and partially implemented a comprehensive Pharmacy Benefit Management (PBM) system. The project includes complete architecture documentation, database schema, Docker-based development environment, and comprehensive data model implementation with **10 million enrollment records** and **10 million formulary-drug relationships**.
 
 ### Key Achievements
 - ✅ Complete system architecture design (15+ microservices)
@@ -21,6 +21,9 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
 - ✅ Enrollment data model with CSV parser (10,000,000 enrollments)
 - ✅ **Formulary data model with CSV parser** 🆕
 - ✅ **FormularyConverter with complete CRUD operations** 🆕
+- ✅ **FormularyDrug data model with CSV parser** 🆕
+- ✅ **FormularyDrugDAO with complete CRUD operations** 🆕
+- ✅ **PerformanceMetrics refactored to rdbms package** 🆕
 - ✅ US healthcare enrollment rules implementation
 - ✅ Performance metrics system with pipe-delimited CSV logging
 - ✅ Command-line parameter support for targeted CRUD operations
@@ -236,6 +239,7 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
 - ✅ Member (complete with DAO)
 - ✅ Enrollment (complete with DAO)
 - ✅ **Formulary (complete with DAO)** 🆕
+- ✅ **FormularyDrug (complete with DAO)** 🆕
 - ⏳ Drug (pending)
 - ⏳ Pharmacy (pending)
 - ⏳ Claim (pending)
@@ -336,7 +340,8 @@ IgniteVSPostgres/
 │       ├── benefitplan_performance.log           # Plan operation metrics (CSV)
 │       ├── member_performance.log                 # Member operation metrics (CSV)
 │       ├── enrollment_performance.log             # Enrollment operation metrics (CSV)
-│       └── formulary_performance.log              # Formulary operation metrics (CSV) 🆕
+│       ├── formulary_performance.log              # Formulary operation metrics (CSV) 🆕
+│       └── formularydrug_performance.log          # Formulary-Drug operation metrics (CSV) 🆕
 ├── database/
 │   ├── init/
 │   │   ├── 01-create-schema.sql                  # Database schema
@@ -494,7 +499,7 @@ docker-compose down -v && docker-compose up -d
 
 ## Recent Accomplishments (Current Session)
 
-### Major Milestones
+### Major Milestones (Previous Session)
 1. ✅ **Enrollment Data Generation** - Created 10,000,000 realistic enrollment records
    - Python script with US healthcare enrollment rules
    - 20 CSV files (~30MB each, 589MB total)
@@ -531,12 +536,62 @@ docker-compose down -v && docker-compose up -d
    - `make run-delete-enrollment` - Delete operations
    - `make run-all-enrollment` - All CRUD operations
 
-### Code Statistics
+### Code Statistics (Previous Session)
 - **Lines of Code Added:** ~800+ lines
 - **New Classes:** 3 (Enrollment, EnrollmentConverter, EnrollmentDAO)
 - **Data Generated:** 10,000,000 enrollment records (589MB)
 - **CSV Files Created:** 20 enrollment files
 - **Documentation Updated:** README.md, PROJECT_STATUS.md, Makefile
+
+### Major Milestones (Current Session) 🆕
+1. ✅ **FormularyDrug Model** - Complete POJO implementation
+   - 14 fields with foreign keys to formulary and drug tables
+   - Business keys (formulary_code, ndc_code) for CSV-to-database mapping
+   - Utility methods for tier descriptions and utilization management
+   - 280+ lines of production code
+
+2. ✅ **FormularyDrugConverter** - Multi-file CSV parser
+   - Loads 10M formulary-drug relationships from 64 CSV files
+   - Pattern matching for flexible file naming
+   - Progress logging and statistics generation
+   - Tier and status distribution analysis
+   - 300+ lines with comprehensive error handling
+
+3. ✅ **FormularyDrugDAO** - Complete DAO implementation
+   - **Foreign key resolution using CROSS JOIN queries** (formulary_code → formulary_id, ndc_code → drug_id)
+   - Batch insert optimized for 10M records
+   - Progress logging every 10,000 records
+   - Custom queries: findByFormularyId(), findByDrugId(), findByTier(), countByTier(), findWithPriorAuth()
+   - 584 lines of production code
+
+4. ✅ **PerformanceMetrics Refactoring** - Package reorganization
+   - Moved from dao package to rdbms package
+   - Updated all DAO classes with new import
+   - Maintains backward compatibility
+   - Cleaner package structure
+
+5. ✅ **App.java Enhancement** - Formulary-drug CRUD operations
+   - CREATE: Load and insert formulary-drug relationships
+   - READ: Display tier distribution and sample relationships
+   - UPDATE: Modify tier and prior auth requirements
+   - DELETE: Remove formulary-drug relationships
+   - Foreign key validation before loading
+
+6. ✅ **Makefile Updates** - Complete formulary-drug targets
+   - `make run-create-formulary-drug` - Insert 10M relationships
+   - `make run-read-formulary-drug` - Display statistics
+   - `make run-update-formulary-drug` - Update operations
+   - `make run-delete-formulary-drug` - Delete operations
+   - `make run-all-formulary-drug` - All CRUD operations
+
+### Code Statistics (Current Session) 🆕
+- **Lines of Code Added:** ~1,200+ lines
+- **New Classes:** 2 (FormularyDrug, FormularyDrugConverter)
+- **Modified Classes:** 7 (FormularyDrugDAO, App.java, all DAO classes for import updates)
+- **Data Generated:** 10,000,000 formulary-drug relationships
+- **CSV Files Created:** 64 formulary-drug files
+- **Documentation Updated:** README.md, PROJECT_STATUS.md, Makefile, FORMULARY_DRUG_DATA.md
+- **Package Refactoring:** PerformanceMetrics moved to rdbms package
 
 ## Next Steps
 
