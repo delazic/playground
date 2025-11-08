@@ -671,9 +671,18 @@ docker-compose down -v && docker-compose up -d
    - All 25 source files compiled without errors
    - Application ready to run
 
-3. ✅ **Documentation Updates**
+3. ✅ **Fixed Database Schema Partitioning Issue**
+   - **Problem**: Claim table and all subsequent tables (claim_line, dur_result, prior_auth, plan_rule, drug_interaction) were not being created
+   - **Root Cause**: PostgreSQL error - "unique constraint on partitioned table must include all partitioning columns"
+   - **Solution**: Changed claim_number from `UNIQUE` constraint to composite `UNIQUE (claim_number, service_date)`
+   - **File Modified**: `database/init/01-create-schema.sql` (line 163)
+   - **Result**: All 16 tables now create successfully (was 8, now 16)
+   - **Verification**: Database reset with `docker-compose down -v && docker-compose up -d`
+
+4. ✅ **Documentation Updates**
    - Updated `PROJECT_STATUS.md` with complete pharmacy implementation
    - Updated `README.md` with pharmacy operations
+   - Documented database schema fix
    - All documentation reflects current project state
 
 ## Next Steps
