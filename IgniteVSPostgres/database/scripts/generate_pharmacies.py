@@ -349,7 +349,7 @@ def main():
     pharmacies = generate_pharmacies(50000)
     
     # Write to CSV
-    output_file = 'src/main/resources/data/us_pharmacy_pharmacies.csv'
+    output_file = '../../src/main/resources/data/us_pharmacy_pharmacies.csv'
     write_csv(pharmacies, output_file)
     
     # Generate statistics

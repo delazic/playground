@@ -129,7 +129,7 @@ def main():
     total_members = 1_000_000
     num_files = 10
     members_per_file = total_members // num_files
-    output_dir = '../data'
+    output_dir = '../../src/main/resources/data'
     
     print(f"Generating {total_members:,} US healthcare members...")
     print(f"Splitting into {num_files} files ({members_per_file:,} members each)")

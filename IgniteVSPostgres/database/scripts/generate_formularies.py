@@ -24,7 +24,7 @@ import glob
 
 # Configuration
 TOTAL_FORMULARIES = 5000
-OUTPUT_DIR = Path("../data")
+OUTPUT_DIR = Path("../../src/main/resources/data")
 OUTPUT_FILE = "us_pharmacy_formularies.csv"
 
 # Market segment distribution (must sum to TOTAL_FORMULARIES)

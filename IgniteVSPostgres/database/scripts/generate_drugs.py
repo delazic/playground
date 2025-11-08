@@ -20,7 +20,7 @@ from pathlib import Path
 
 # Configuration
 TOTAL_DRUGS = 20000
-OUTPUT_DIR = Path("../data")
+OUTPUT_DIR = Path("../../src/main/resources/data")
 OUTPUT_FILE = "us_pharmacy_drugs.csv"
 
 # Drug type distribution

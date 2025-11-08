@@ -21,7 +21,7 @@ import glob
 TOTAL_ENROLLMENTS = 10_000_000
 ENROLLMENTS_PER_FILE = 500_000
 NUM_FILES = TOTAL_ENROLLMENTS // ENROLLMENTS_PER_FILE
-OUTPUT_DIR = Path("../data")
+OUTPUT_DIR = Path("../../src/main/resources/data")
 FILE_PREFIX = "us_pharmacy_enrollments"
 
 # Enrollment scenarios (percentages)
