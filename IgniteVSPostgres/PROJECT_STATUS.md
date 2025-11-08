@@ -766,6 +766,11 @@ docker-compose down -v && docker-compose up -d
 - ✅ Package structure - Reorganized to proper hierarchy
 - ✅ CSV file location - Moved to resources for classpath access
 - ✅ Docker connectivity - Resolved with proper network configuration
+- ✅ **Database Schema Partitioning Error** - Fixed claim table UNIQUE constraint to include partition key (service_date)
+  - **Issue**: Only 8 of 16 tables were being created; claim table and all subsequent tables failed
+  - **Root Cause**: PostgreSQL requires UNIQUE constraints on partitioned tables to include all partitioning columns
+  - **Solution**: Changed from `claim_number VARCHAR(50) UNIQUE NOT NULL` to `claim_number VARCHAR(50) NOT NULL` with composite `UNIQUE (claim_number, service_date)`
+  - **Result**: All 16 tables now create successfully
 
 ---
 
