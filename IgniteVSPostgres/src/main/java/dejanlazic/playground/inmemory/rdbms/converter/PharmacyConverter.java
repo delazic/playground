@@ -319,5 +319,3 @@ public class PharmacyConverter {
         System.out.println("=".repeat(70));
     }
 }
-
-// Made with Bob

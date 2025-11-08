@@ -1512,28 +1512,35 @@ make run-update-member  # UPDATE: Update a sample member
 make run-delete-member  # DELETE: Delete a sample member
 make run-all-member     # Run all CRUD operations for members
 
-# Enrollment Operations 🆕
+# Enrollment Operations
 make run-create-enrollment  # CREATE: Insert 10M enrollments from CSV
 make run-read-enrollment    # READ: Display enrollment statistics
 make run-update-enrollment  # UPDATE: Update a sample enrollment
 make run-delete-enrollment  # DELETE: Delete a sample enrollment
 make run-all-enrollment     # Run all CRUD operations for enrollments
 
-# Drug Operations 🆕
+# Drug Operations
 make run-create-drug        # CREATE: Insert 20K drugs from CSV
 make run-read-drug          # READ: Display drug statistics
 make run-update-drug        # UPDATE: Update a sample drug
 make run-delete-drug        # DELETE: Delete a sample drug
 make run-all-drug           # Run all CRUD operations for drugs
 
-# Formulary Operations 🆕
+# Pharmacy Operations 🆕
+make run-create-pharmacy    # CREATE: Insert 50K pharmacies from CSV
+make run-read-pharmacy      # READ: Display pharmacy statistics
+make run-update-pharmacy    # UPDATE: Update a sample pharmacy
+make run-delete-pharmacy    # DELETE: Delete a sample pharmacy
+make run-all-pharmacy       # Run all CRUD operations for pharmacies
+
+# Formulary Operations
 make run-create-formulary   # CREATE: Insert formularies from CSV
 make run-read-formulary     # READ: Display formulary statistics
 make run-update-formulary   # UPDATE: Update a sample formulary
 make run-delete-formulary   # DELETE: Delete a sample formulary
 make run-all-formulary      # Run all CRUD operations for formularies
 
-# Formulary-Drug Operations 🆕
+# Formulary-Drug Operations
 make run-create-formulary-drug  # CREATE: Insert formulary-drug relationships from CSV (10M records)
 make run-read-formulary-drug    # READ: Display formulary-drug statistics
 make run-update-formulary-drug  # UPDATE: Update a sample formulary-drug relationship
@@ -1565,10 +1572,12 @@ The database schema is automatically created when Docker containers start. The i
 
 **Large-Scale Test Data:**
 - 34 US pharmacy benefit plans (CSV)
+- 20,000 US pharmacy drugs (1 CSV file)
+- 50,000 US pharmacies (1 CSV file) 🆕
 - 1,000,000 members (10 CSV files)
-- **10,000,000 enrollments (20 CSV files)** 🆕
-- **20,000 US pharmacy drugs (1 CSV file)** 🆕
-- **10,000,000 formulary-drug relationships (64 CSV files)** 🆕
+- 10,000,000 enrollments (20 CSV files)
+- 4,909 formularies (1 CSV file)
+- 10,000,000 formulary-drug relationships (64 CSV files)
 
 #### Connecting to PostgreSQL
 
@@ -1645,11 +1654,11 @@ After setting up the development environment:
 
 1. **Load Test Data:**
    
-   **Option A: Load All Data at Once (Recommended)** 🆕
+   **Option A: Load All Data at Once (Recommended)**
    ```bash
-   # Load all data in correct order: Plan → Drug → Member → Enrollment
+   # Load all data in correct order: Plan → Drug → Pharmacy → Member → Enrollment → Formulary → Formulary-Drug
    # This respects foreign key relationships automatically
-   # ⚠️ Total time: 10-15 minutes for all 10+ million records
+   # ⚠️ Total time: 15-20 minutes for all 20+ million records
    make load-all-data
    ```
    
@@ -1658,15 +1667,25 @@ After setting up the development environment:
    # Step 1: Load benefit plans (34 plans)
    make run-create-plan
    
-   # Step 2: Load drugs (20,000 drugs) 🆕
+   # Step 2: Load drugs (20,000 drugs)
    make run-create-drug
    
-   # Step 3: Load members (1 million members)
+   # Step 3: Load pharmacies (50,000 pharmacies) 🆕
+   make run-create-pharmacy
+   
+   # Step 4: Load members (1 million members)
    make run-create-member
    
-   # Step 4: Load enrollments (10 million enrollments)
+   # Step 5: Load enrollments (10 million enrollments)
    # ⚠️ This will take 5-10 minutes
    make run-create-enrollment
+   
+   # Step 6: Load formularies (4,909 formularies)
+   make run-create-formulary
+   
+   # Step 7: Load formulary-drug relationships (10 million relationships)
+   # ⚠️ This will take 5-10 minutes
+   make run-create-formulary-drug
    ```
 
 2. **Explore the Database:**
@@ -1676,20 +1695,31 @@ After setting up the development environment:
    
    -- Check loaded data
    SELECT COUNT(*) FROM plan;        -- Should show 34
-   SELECT COUNT(*) FROM drug;        -- Should show 20,000 🆕
+   SELECT COUNT(*) FROM drug;        -- Should show 20,000
+   SELECT COUNT(*) FROM pharmacy;    -- Should show 50,000 🆕
    SELECT COUNT(*) FROM member;      -- Should show 1,000,000
    SELECT COUNT(*) FROM enrollment;  -- Should show 10,000,000
+   SELECT COUNT(*) FROM formulary;   -- Should show 4,909
+   SELECT COUNT(*) FROM formulary_drug; -- Should show 10,000,000
    
    -- Check enrollment statistics
    SELECT COUNT(*) FROM enrollment WHERE is_active = true;
    SELECT relationship, COUNT(*) FROM enrollment GROUP BY relationship;
    
-   -- Check drug statistics 🆕
+   -- Check drug statistics
    SELECT COUNT(*) FROM drug WHERE is_generic = true;
    SELECT COUNT(*) FROM drug WHERE is_brand = true;
    SELECT drug_class, COUNT(*) FROM drug GROUP BY drug_class ORDER BY COUNT(*) DESC LIMIT 10;
    
-   -- Check formulary-drug statistics 🆕
+   -- Check pharmacy statistics 🆕
+   SELECT COUNT(*) FROM pharmacy WHERE is_active = true;
+   SELECT pharmacy_type, COUNT(*) FROM pharmacy GROUP BY pharmacy_type ORDER BY COUNT(*) DESC;
+   SELECT state, COUNT(*) FROM pharmacy GROUP BY state ORDER BY COUNT(*) DESC LIMIT 10;
+   
+   -- Check formulary statistics
+   SELECT COUNT(*) FROM formulary WHERE is_active = true;
+   
+   -- Check formulary-drug statistics
    SELECT COUNT(*) FROM formulary_drug;
    SELECT tier, COUNT(*) FROM formulary_drug GROUP BY tier ORDER BY tier;
    SELECT status, COUNT(*) FROM formulary_drug GROUP BY status;
@@ -1713,9 +1743,10 @@ After setting up the development environment:
 #### Phase 1: Foundation (Months 1-2)
 - [x] Set up development environment
 - [x] Create database schema
-- [x] Implement core data models (Plan, Member, Enrollment, Drug, Formulary, FormularyDrug) 🆕
+- [x] Implement core data models (Plan, Drug, Pharmacy, Member, Enrollment, Formulary, FormularyDrug) 🆕
 - [x] Generate large-scale test data (20M+ records) 🆕
-- [x] Refactor PerformanceMetrics to rdbms package 🆕
+- [x] Refactor PerformanceMetrics to rdbms package
+- [x] Complete Pharmacy implementation with CRUD operations 🆕
 - [ ] Set up CI/CD pipeline
 - [ ] Implement authentication service
 

@@ -512,5 +512,3 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
         return pharmacy;
     }
 }
-
-// Made with Bob
