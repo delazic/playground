@@ -1,14 +1,14 @@
 # PBM System - Project Status Report
 
-**Last Updated:** 2025-11-07 13:30 UTC
+**Last Updated:** 2025-11-07 15:10 UTC
 **Project:** Pharmacy Benefit Management (PBM) System for US Healthcare Market
-**Status:** Phase 1 - Advanced Progress with Complete Formulary-Drug Relationship System
+**Status:** Phase 1 - Advanced Progress with Complete Formulary System and Pharmacy Data
 
 ---
 
 ## Executive Summary
 
-Successfully designed and partially implemented a comprehensive Pharmacy Benefit Management (PBM) system. The project includes complete architecture documentation, database schema, Docker-based development environment, and comprehensive data model implementation with **10 million enrollment records** and **10 million formulary-drug relationships**.
+Successfully designed and partially implemented a comprehensive Pharmacy Benefit Management (PBM) system. The project includes complete architecture documentation, database schema, Docker-based development environment, and comprehensive data model implementation with **10 million enrollment records**, **10 million formulary-drug relationships**, and **50,000 pharmacy records**.
 
 ### Key Achievements
 - ✅ Complete system architecture design (15+ microservices)
@@ -19,15 +19,18 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
 - ✅ BenefitPlan data model with CSV parser (34 US pharmacy plans)
 - ✅ Member data model with CSV parser (1,000,000 members)
 - ✅ Enrollment data model with CSV parser (10,000,000 enrollments)
-- ✅ **Formulary data model with CSV parser** 🆕
-- ✅ **FormularyConverter with complete CRUD operations** 🆕
-- ✅ **FormularyDrug data model with CSV parser** 🆕
-- ✅ **FormularyDrugDAO with complete CRUD operations** 🆕
-- ✅ **PerformanceMetrics refactored to rdbms package** 🆕
+- ✅ **Formulary data model with CSV parser (4,909 formularies)**
+- ✅ **FormularyConverter with complete CRUD operations**
+- ✅ **FormularyDrug data model with CSV parser (10M relationships)**
+- ✅ **FormularyDrugDAO with complete CRUD operations**
+- ✅ **Pharmacy data generation (50,000 pharmacies)** 🆕
+- ✅ **Fixed formulary_code NOT NULL constraint issue** 🆕
+- ✅ **Removed 90 duplicate formulary records from CSV** 🆕
+- ✅ PerformanceMetrics refactored to rdbms package
 - ✅ US healthcare enrollment rules implementation
 - ✅ Performance metrics system with pipe-delimited CSV logging
 - ✅ Command-line parameter support for targeted CRUD operations
-- ✅ Extensive documentation (8+ major documents)
+- ✅ Extensive documentation (9+ major documents)
 
 ---
 
@@ -238,10 +241,11 @@ Successfully designed and partially implemented a comprehensive Pharmacy Benefit
 - ✅ BenefitPlan (complete with DAO and tests)
 - ✅ Member (complete with DAO)
 - ✅ Enrollment (complete with DAO)
-- ✅ **Formulary (complete with DAO)** 🆕
-- ✅ **FormularyDrug (complete with DAO)** 🆕
-- ⏳ Drug (pending)
-- ⏳ Pharmacy (pending)
+- ✅ Formulary (complete with DAO - fixed formulary_code issue)
+- ✅ FormularyDrug (complete with DAO)
+- ✅ **Pharmacy (data generation complete - 50K records)** 🆕
+- ⏳ Drug (pending - DAO implementation needed)
+- ⏳ Pharmacy (pending - DAO implementation needed)
 - ⏳ Claim (pending)
 
 ### ⏳ Pending Tasks
@@ -592,6 +596,31 @@ docker-compose down -v && docker-compose up -d
 - **CSV Files Created:** 64 formulary-drug files
 - **Documentation Updated:** README.md, PROJECT_STATUS.md, Makefile, FORMULARY_DRUG_DATA.md
 - **Package Refactoring:** PerformanceMetrics moved to rdbms package
+
+### Latest Session Accomplishments (2025-11-07 15:10 UTC) 🆕
+1. ✅ **Fixed Formulary Insertion Error**
+   - Root cause: Missing `formulary_code` field in model and DAO
+   - Added `formularyCode` field to Formulary.java with getter/setter
+   - Updated FormularyConverter to parse formulary_code from CSV field[0]
+   - Updated FormularyDAO INSERT statement to include formulary_code column
+   - Removed 90 duplicate records from CSV (5,000 → 4,909 unique)
+   - **Result:** Successfully inserted 4,909 formularies at 29,220 records/sec
+
+2. ✅ **Pharmacy Data Generation System**
+   - Created `generate_pharmacies.py` script (429 lines)
+   - Generated 50,000 unique pharmacy records with realistic US distribution
+   - Chain distribution: 53.6% Independent, 16% CVS, 14.8% Walgreens, 7.8% Walmart
+   - Type distribution: 70% Retail, 15% Long-term Care, 10% Specialty, 5% Mail-order
+   - Geographic distribution based on state population (all 50 states)
+   - Created `us_pharmacy_pharmacies.csv` (5.1MB, 50,001 lines)
+   - Created `PHARMACY_DATA.md` documentation (220 lines)
+   - **Result:** Production-ready pharmacy dataset for testing and development
+
+3. ✅ **Documentation Updates**
+   - Updated `database/scripts/README.md` with pharmacy generation section
+   - Updated `PROJECT_STATUS.md` with latest accomplishments
+   - Updated data generation order to include pharmacies
+   - All documentation now reflects current project state
 
 ## Next Steps
 

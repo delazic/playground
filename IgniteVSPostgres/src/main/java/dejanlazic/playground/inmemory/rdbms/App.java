@@ -13,18 +13,21 @@ import dejanlazic.playground.inmemory.rdbms.converter.EnrollmentConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.FormularyConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.FormularyDrugConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.MemberConverter;
+import dejanlazic.playground.inmemory.rdbms.converter.PharmacyConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.DrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.EnrollmentDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.FormularyDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.FormularyDrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.MemberDAO;
+import dejanlazic.playground.inmemory.rdbms.dao.PharmacyDAO;
 import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
 import dejanlazic.playground.inmemory.rdbms.model.Drug;
 import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
 import dejanlazic.playground.inmemory.rdbms.model.Formulary;
 import dejanlazic.playground.inmemory.rdbms.model.FormularyDrug;
 import dejanlazic.playground.inmemory.rdbms.model.Member;
+import dejanlazic.playground.inmemory.rdbms.model.Pharmacy;
 
 /**
  * Application to demonstrate CRUD operations with pure JDBC database connectivity
@@ -33,20 +36,22 @@ import dejanlazic.playground.inmemory.rdbms.model.Member;
  *   java App [operation] [entity]
  *
  * Operations: CREATE, READ, UPDATE, DELETE, ALL
- * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY, FORMULARY_DRUG
+ * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY, FORMULARY_DRUG, PHARMACY
  *
  * Examples:
  *   java App CREATE PLAN            - Insert benefit plans from CSV
  *   java App READ PLAN              - Read and display plans
  *   java App CREATE DRUG            - Insert drugs from CSV
  *   java App READ DRUG              - Read and display drugs
+ *   java App CREATE PHARMACY        - Insert pharmacies from CSV
+ *   java App READ PHARMACY          - Read and display pharmacies
  *   java App CREATE ENROLLMENT      - Insert enrollments from CSV
  *   java App READ ENROLLMENT        - Read and display enrollments
  *   java App CREATE FORMULARY       - Insert formularies from CSV
  *   java App READ FORMULARY         - Read and display formularies
  *   java App CREATE FORMULARY_DRUG  - Insert formulary-drug relationships from CSV
  *   java App READ FORMULARY_DRUG    - Read and display formulary-drug relationships
- *   java App ALL DRUG               - Run all CRUD operations for drugs
+ *   java App ALL PHARMACY           - Run all CRUD operations for pharmacies
  *   java App                        - Run all operations for all entities (default)
  */
 public class App {
@@ -77,6 +82,10 @@ public class App {
             
             if ("ALL".equals(entity) || "DRUG".equals(entity)) {
                 executeDrugOperations(connector, operation);
+            }
+            
+            if ("ALL".equals(entity) || "PHARMACY".equals(entity)) {
+                executePharmacyOperations(connector, operation);
             }
             
             if ("ALL".equals(entity) || "MEMBER".equals(entity)) {
@@ -133,6 +142,25 @@ public class App {
                 readDrugs(connector);
                 updateDrug(connector);
                 deleteDrug(connector);
+            }
+            default -> System.err.println("❌ Unknown operation: " + operation);
+        }
+    }
+    
+    /**
+     * Execute CRUD operations for Pharmacy entity
+     */
+    private static void executePharmacyOperations(DatabaseConnector connector, String operation) {
+        switch (operation) {
+            case "CREATE" -> createPharmacies(connector);
+            case "READ" -> readPharmacies(connector);
+            case "UPDATE" -> updatePharmacy(connector);
+            case "DELETE" -> deletePharmacy(connector);
+            case "ALL" -> {
+                createPharmacies(connector);
+                readPharmacies(connector);
+                updatePharmacy(connector);
+                deletePharmacy(connector);
             }
             default -> System.err.println("❌ Unknown operation: " + operation);
         }
@@ -474,6 +502,207 @@ public class App {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to delete drug", e);
             System.err.println("❌ Failed to delete drug: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * CREATE operation for Pharmacies
+     */
+    private static void createPharmacies(DatabaseConnector connector) {
+        List<Pharmacy> pharmacies = loadPharmacies();
+        if (pharmacies != null) {
+            insertAndReportPharmacies(connector, pharmacies);
+        }
+    }
+    
+    /**
+     * READ operation for Pharmacies
+     */
+    private static void readPharmacies(DatabaseConnector connector) {
+        printHeader("Reading Pharmacies");
+        PharmacyDAO dao = new PharmacyDAO(connector);
+        
+        try {
+            long count = dao.count();
+            System.out.println("📖 Found " + String.format("%,d", count) + " pharmacies in database");
+            System.out.println();
+            
+            if (count > 0) {
+                List<Pharmacy> pharmacies = dao.findAll();
+                
+                // Display first 10 pharmacies
+                int displayCount = Math.min(10, pharmacies.size());
+                System.out.println("Displaying first " + displayCount + " pharmacies:");
+                System.out.println("-".repeat(120));
+                System.out.printf("%-10s | %-40s | %-30s | %-15s | %-15s%n",
+                    "NCPDP ID", "Pharmacy Name", "City, State", "Type", "Status");
+                System.out.println("-".repeat(120));
+                
+                for (int i = 0; i < displayCount; i++) {
+                    Pharmacy p = pharmacies.get(i);
+                    String location = p.getCity() + ", " + p.getState();
+                    System.out.printf("%-10s | %-40s | %-30s | %-15s | %-15s%n",
+                        p.getNcpdpId(),
+                        truncate(p.getPharmacyName(), 40),
+                        truncate(location, 30),
+                        p.getPharmacyType(),
+                        p.getStatus());
+                }
+                System.out.println("-".repeat(120));
+                
+                // Display statistics
+                long activeCount = pharmacies.stream().filter(Pharmacy::isActive).count();
+                long retailCount = pharmacies.stream().filter(Pharmacy::isRetail).count();
+                long mailOrderCount = pharmacies.stream().filter(Pharmacy::isMailOrder).count();
+                long specialtyCount = pharmacies.stream().filter(Pharmacy::isSpecialty).count();
+                long ltcCount = pharmacies.stream().filter(Pharmacy::isLongTermCare).count();
+                
+                System.out.println();
+                System.out.println("Pharmacy Statistics:");
+                System.out.println("  Active:        " + String.format("%,d", activeCount) +
+                    " (" + String.format("%.1f%%", (activeCount * 100.0 / count)) + ")");
+                System.out.println();
+                System.out.println("Type Distribution:");
+                System.out.println("  Retail:        " + String.format("%,d", retailCount) +
+                    " (" + String.format("%.1f%%", (retailCount * 100.0 / count)) + ")");
+                System.out.println("  Mail Order:    " + String.format("%,d", mailOrderCount) +
+                    " (" + String.format("%.1f%%", (mailOrderCount * 100.0 / count)) + ")");
+                System.out.println("  Specialty:     " + String.format("%,d", specialtyCount) +
+                    " (" + String.format("%.1f%%", (specialtyCount * 100.0 / count)) + ")");
+                System.out.println("  Long-Term Care:" + String.format("%,d", ltcCount) +
+                    " (" + String.format("%.1f%%", (ltcCount * 100.0 / count)) + ")");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read pharmacies", e);
+            System.err.println("❌ Failed to read pharmacies: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * UPDATE operation for Pharmacies
+     */
+    private static void updatePharmacy(DatabaseConnector connector) {
+        printHeader("Updating a Pharmacy");
+        PharmacyDAO dao = new PharmacyDAO(connector);
+        
+        try {
+            // Find first pharmacy to update
+            List<Pharmacy> pharmacies = dao.findAll();
+            if (pharmacies.isEmpty()) {
+                System.out.println("⚠️  No pharmacies found to update");
+                printSeparator();
+                return;
+            }
+            
+            Pharmacy pharmacy = pharmacies.get(0);
+            String originalName = pharmacy.getPharmacyName();
+            boolean originalActive = pharmacy.isActive();
+            
+            // Update the pharmacy
+            pharmacy.setPharmacyName(originalName + " (UPDATED)");
+            pharmacy.setActive(!originalActive);
+            
+            boolean updated = dao.update(pharmacy);
+            if (updated) {
+                System.out.println("✅ Successfully updated pharmacy: " + pharmacy.getNcpdpId());
+                System.out.println("   Old name: " + originalName);
+                System.out.println("   New name: " + pharmacy.getPharmacyName());
+                System.out.println("   Old active status: " + originalActive);
+                System.out.println("   New active status: " + pharmacy.isActive());
+            } else {
+                System.out.println("⚠️  Pharmacy not found or not updated");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to update pharmacy", e);
+            System.err.println("❌ Failed to update pharmacy: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * DELETE operation for Pharmacies
+     */
+    private static void deletePharmacy(DatabaseConnector connector) {
+        printHeader("Deleting a Pharmacy");
+        PharmacyDAO dao = new PharmacyDAO(connector);
+        
+        try {
+            // Find a pharmacy to delete
+            List<Pharmacy> pharmacies = dao.findAll();
+            if (pharmacies.isEmpty()) {
+                System.out.println("⚠️  No pharmacies found to delete");
+                printSeparator();
+                return;
+            }
+            
+            // Delete the last pharmacy
+            Pharmacy pharmacyToDelete = pharmacies.get(pharmacies.size() - 1);
+            String ncpdpId = pharmacyToDelete.getNcpdpId();
+            String pharmacyName = pharmacyToDelete.getPharmacyName();
+            
+            boolean deleted = dao.delete(pharmacyToDelete.getPharmacyId());
+            if (deleted) {
+                System.out.println("✅ Successfully deleted pharmacy: " + ncpdpId);
+                System.out.println("   Pharmacy name: " + pharmacyName);
+            } else {
+                System.out.println("⚠️  Pharmacy not found or not deleted");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to delete pharmacy", e);
+            System.err.println("❌ Failed to delete pharmacy: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * Load pharmacies from CSV file
+     * @return List of pharmacies, or null if loading fails
+     */
+    private static List<Pharmacy> loadPharmacies() {
+        printHeader("Loading and Inserting Pharmacies");
+        
+        PharmacyConverter pharmacyConverter = new PharmacyConverter();
+        try {
+            List<Pharmacy> pharmacies = pharmacyConverter.loadAllPharmacies();
+            System.out.println("✅ Loaded " + String.format("%,d", pharmacies.size()) + " pharmacies from CSV file");
+            return pharmacies;
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load pharmacies", ex);
+            System.err.println("❌ Failed to load pharmacies: " + ex.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Insert pharmacies into database and report results using DAO
+     * @param connector Database connector
+     * @param pharmacies List of pharmacies to insert
+     */
+    private static void insertAndReportPharmacies(DatabaseConnector connector, List<Pharmacy> pharmacies) {
+        PharmacyDAO dao = new PharmacyDAO(connector);
+        
+        System.out.println("📝 Inserting " + String.format("%,d", pharmacies.size()) + " pharmacies into database...");
+        System.out.println("⏳ This may take a moment...");
+        
+        long startTime = System.currentTimeMillis();
+        try {
+            int inserted = dao.insertBatch(pharmacies);
+            long totalTime = System.currentTimeMillis() - startTime;
+            double seconds = totalTime / 1000.0;
+            double recordsPerSecond = inserted / seconds;
+            
+            System.out.println("✅ Successfully inserted " + String.format("%,d", inserted) + " pharmacies");
+            System.out.println("⏱️  Total time: " + String.format("%.2f", seconds) + " seconds");
+            System.out.println("🚀 Throughput: " + String.format("%,.0f", recordsPerSecond) + " records/sec");
+            
+            // Display count
+            long totalCount = dao.count();
+            System.out.println("📊 Total pharmacies in database: " + String.format("%,d", totalCount));
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to insert pharmacies", e);
+            System.err.println("❌ Failed to insert pharmacies: " + e.getMessage());
         }
         printSeparator();
     }

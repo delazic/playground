@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug load-all-data
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug load-all-data
 
 # Default target
 help:
@@ -55,6 +55,13 @@ help:
 	@echo "  make run-update-drug       - UPDATE: Update a sample drug"
 	@echo "  make run-delete-drug       - DELETE: Delete a sample drug"
 	@echo "  make run-all-drug          - Run all CRUD operations for drugs"
+	@echo ""
+	@echo "Pharmacy Operations:"
+	@echo "  make run-create-pharmacy   - CREATE: Insert pharmacies from CSV (50K records)"
+	@echo "  make run-read-pharmacy     - READ: Display pharmacy statistics"
+	@echo "  make run-update-pharmacy   - UPDATE: Update a sample pharmacy"
+	@echo "  make run-delete-pharmacy   - DELETE: Delete a sample pharmacy"
+	@echo "  make run-all-pharmacy      - Run all CRUD operations for pharmacies"
 	@echo ""
 	@echo "Formulary Operations:"
 	@echo "  make run-create-formulary  - CREATE: Insert formularies from CSV"
@@ -280,6 +287,48 @@ run-update-drug: build
 # DELETE: Delete a sample drug
 run-delete-drug: build
 	@echo "Running DELETE operation for Drugs..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE DRUG"
+
+# Run all CRUD operations for drugs
+run-all-drug: build
+	@echo "Running all CRUD operations for Drugs..."
+	@echo "⚠️  This will load and insert 20,000 drug records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL DRUG"
+
+# ============================================================================
+# Pharmacy CRUD Operations
+# ============================================================================
+
+# CREATE: Insert pharmacies from CSV (50,000 records)
+run-create-pharmacy: build
+	@echo "Running CREATE operation for Pharmacies..."
+	@echo "⚠️  This will load and insert 50,000 pharmacy records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE PHARMACY"
+
+# READ: Display pharmacy statistics
+run-read-pharmacy: build
+	@echo "Running READ operation for Pharmacies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ PHARMACY"
+
+# UPDATE: Update a sample pharmacy
+run-update-pharmacy: build
+	@echo "Running UPDATE operation for Pharmacies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE PHARMACY"
+
+# DELETE: Delete a sample pharmacy
+run-delete-pharmacy: build
+	@echo "Running DELETE operation for Pharmacies..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE PHARMACY"
+
+# Run all CRUD operations for pharmacies
+run-all-pharmacy: build
+	@echo "Running all CRUD operations for Pharmacies..."
+	@echo "⚠️  This will load and insert 50,000 pharmacy records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL PHARMACY"
+
 # ============================================================================
 # Formulary CRUD Operations
 # ============================================================================

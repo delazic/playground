@@ -4,7 +4,42 @@ This directory contains Python scripts for generating test data for the PBM syst
 
 ## Scripts
 
-### 1. generate_formularies.py
+### 1. generate_pharmacies.py 🆕
+Generates 50,000 realistic US pharmacy records.
+
+**Output:**
+- Single CSV file: `us_pharmacy_pharmacies.csv`
+- 50,000 pharmacy records
+- Total size: ~5.1MB
+
+**Pharmacy Distribution:**
+- Independent/Other: 53.6% (~26,806)
+- CVS: 16.0% (~8,000)
+- Walgreens: 14.8% (~7,416)
+- Walmart: 7.8% (~3,916)
+- Rite Aid: 4.0% (~2,000)
+- Regional Chains: 3.7% (~1,862)
+
+**Pharmacy Types:**
+- Retail: 70% (~35,016)
+- Long-term Care: 15% (~7,486)
+- Specialty: 10% (~4,929)
+- Mail Order: 5% (~2,569)
+
+**Features:**
+- Unique NCPDP IDs (7 digits)
+- Unique NPIs (10 digits)
+- Realistic US addresses and phone numbers
+- Geographic distribution based on state population
+- 95% active, 5% inactive
+
+**Usage:**
+```bash
+cd IgniteVSPostgres
+python3 database/scripts/generate_pharmacies.py
+```
+
+### 2. generate_formularies.py
 Generates 5,000 realistic US healthcare formularies.
 
 **Output:**
@@ -102,20 +137,22 @@ chmod +x generate_enrollments.py
 **IMPORTANT:** Generate data in this order to satisfy dependencies:
 
 1. **Plans** (already exists as `us_pharmacy_plans.csv`)
-2. **Formularies** (run `generate_formularies.py`) - Links to plans
-3. **Drugs** (run `generate_drugs.py`) - Independent, can run anytime
-4. **Members** (run `generate_members.py`)
-5. **Enrollments** (run `generate_enrollments.py`) - Links to members and plans
+2. **Pharmacies** (run `generate_pharmacies.py`) - Independent, can run anytime 🆕
+3. **Formularies** (run `generate_formularies.py`) - Links to plans
+4. **Drugs** (run `generate_drugs.py`) - Independent, can run anytime
+5. **Members** (run `generate_members.py`)
+6. **Enrollments** (run `generate_enrollments.py`) - Links to members and plans
 
 **Quick Start:**
 ```bash
-cd database/scripts
+cd IgniteVSPostgres
 
 # Generate all data in correct order
-python3 generate_formularies.py
-python3 generate_drugs.py
-python3 generate_members.py
-python3 generate_enrollments.py
+python3 database/scripts/generate_pharmacies.py
+python3 database/scripts/generate_formularies.py
+python3 database/scripts/generate_drugs.py
+python3 database/scripts/generate_members.py
+python3 database/scripts/generate_enrollments.py
 ```
 
 ## Configuration
@@ -189,13 +226,14 @@ HISTORICAL_ONLY = 0.05    # 5%
 
 ## Output Location
 
-All generated CSV files are written to: `../data/`
+All generated CSV files are written to: `src/main/resources/data/`
 
-Relative to scripts directory:
+Project structure:
 ```
-database/
-├── data/
+IgniteVSPostgres/
+├── src/main/resources/data/
 │   ├── us_pharmacy_plans.csv
+│   ├── us_pharmacy_pharmacies.csv            # 50K pharmacies 🆕
 │   ├── us_pharmacy_formularies.csv
 │   ├── us_pharmacy_drugs.csv
 │   ├── us_pharmacy_members_01.csv
@@ -203,18 +241,23 @@ database/
 │   ├── us_pharmacy_members_10.csv
 │   ├── us_pharmacy_enrollments_01.csv
 │   ├── ...
-│   ├── us_pharmacy_enrollments_20.csv
-│   ├── PLAN_DATA.md                          # Plans documentation
-│   ├── FORMULARY_DATA.md                     # Formularies documentation
-│   ├── DRUG_DATA.md                          # Drugs documentation
-│   ├── MEMBER_DATA.md                        # Members documentation
-│   └── ENROLLMENT_DATA.md                    # Enrollments documentation
-└── scripts/
-    ├── generate_formularies.py
-    ├── generate_drugs.py
-    ├── generate_members.py
-    ├── generate_enrollments.py
-    └── README.md
+│   └── us_pharmacy_enrollments_20.csv
+├── database/
+│   ├── data/
+│   │   ├── PLAN_DATA.md                      # Plans documentation
+│   │   ├── PHARMACY_DATA.md                  # Pharmacies documentation 🆕
+│   │   ├── FORMULARY_DATA.md                 # Formularies documentation
+│   │   ├── DRUG_DATA.md                      # Drugs documentation
+│   │   ├── MEMBER_DATA.md                    # Members documentation
+│   │   ├── ENROLLMENT_DATA.md                # Enrollments documentation
+│   │   └── FORMULARY_DRUG_DATA.md            # Formulary-Drug documentation
+│   └── scripts/
+│       ├── generate_pharmacies.py            # 🆕
+│       ├── generate_formularies.py
+│       ├── generate_drugs.py
+│       ├── generate_members.py
+│       ├── generate_enrollments.py
+│       └── README.md
 ```
 
 ## Requirements
