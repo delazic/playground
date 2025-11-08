@@ -4,7 +4,7 @@ This directory contains Python scripts for generating test data for the PBM syst
 
 ## Scripts
 
-### 1. generate_pharmacies.py 🆕
+### 1. generate_pharmacies.py
 Generates 50,000 realistic US pharmacy records.
 
 **Output:**
@@ -132,16 +132,52 @@ chmod +x generate_enrollments.py
 ./generate_enrollments.py
 ```
 
+### 5. generate_pharmacy_networks.py 🆕
+Generates pharmacy network assignment records linking pharmacies to networks.
+
+**Prerequisites:**
+- Pharmacy CSV file must exist (run `generate_pharmacies.py` first)
+
+**Output:**
+- 3 CSV files: `us_pharmacy_pharmacy_networks_01.csv` through `us_pharmacy_pharmacy_networks_03.csv`
+- ~550,000 network assignment records
+- ~30MB per file
+- Total size: ~89MB
+
+**Network Types:**
+- PBM Networks (CVS Caremark, Express Scripts, OptumRx, etc.)
+- Retail Networks (Walgreens, CVS, Walmart, etc.)
+- Specialty Networks (Accredo, CVS Specialty, etc.)
+- Mail-Order Networks
+- Regional Networks
+- Independent Networks
+
+**Features:**
+- Each pharmacy participates in 3-8 networks
+- Network tiers: Preferred and Standard
+- Contract types: Direct, Indirect, PSAO, Aggregator
+- Reimbursement rates (AWP-based formulas)
+- Dispensing fees ($0.50-$3.50)
+- Status tracking (Active, Inactive, Pending)
+- Effective and termination dates
+
+**Usage:**
+```bash
+cd database/scripts
+python3 generate_pharmacy_networks.py
+```
+
 ## Data Generation Order
 
 **IMPORTANT:** Generate data in this order to satisfy dependencies:
 
 1. **Plans** (already exists as `us_pharmacy_plans.csv`)
-2. **Pharmacies** (run `generate_pharmacies.py`) - Independent, can run anytime 🆕
-3. **Formularies** (run `generate_formularies.py`) - Links to plans
-4. **Drugs** (run `generate_drugs.py`) - Independent, can run anytime
-5. **Members** (run `generate_members.py`)
-6. **Enrollments** (run `generate_enrollments.py`) - Links to members and plans
+2. **Pharmacies** (run `generate_pharmacies.py`) - Independent, can run anytime
+3. **Pharmacy Networks** (run `generate_pharmacy_networks.py`) - Links to pharmacies 🆕
+4. **Formularies** (run `generate_formularies.py`) - Links to plans
+5. **Drugs** (run `generate_drugs.py`) - Independent, can run anytime
+6. **Members** (run `generate_members.py`)
+7. **Enrollments** (run `generate_enrollments.py`) - Links to members and plans
 
 **Quick Start:**
 ```bash
@@ -149,6 +185,7 @@ cd IgniteVSPostgres
 
 # Generate all data in correct order
 python3 database/scripts/generate_pharmacies.py
+python3 database/scripts/generate_pharmacy_networks.py
 python3 database/scripts/generate_formularies.py
 python3 database/scripts/generate_drugs.py
 python3 database/scripts/generate_members.py
@@ -226,14 +263,19 @@ HISTORICAL_ONLY = 0.05    # 5%
 
 ## Output Location
 
-All generated CSV files are written to: `src/main/resources/data/`
+**All generated CSV files are written to:** `../../src/main/resources/data/` (relative to scripts directory)
+
+This ensures consistency across all generation scripts.
 
 Project structure:
 ```
 IgniteVSPostgres/
 ├── src/main/resources/data/
 │   ├── us_pharmacy_plans.csv
-│   ├── us_pharmacy_pharmacies.csv            # 50K pharmacies 🆕
+│   ├── us_pharmacy_pharmacies.csv                    # 50K pharmacies
+│   ├── us_pharmacy_pharmacy_networks_01.csv          # Network assignments 🆕
+│   ├── us_pharmacy_pharmacy_networks_02.csv          # 🆕
+│   ├── us_pharmacy_pharmacy_networks_03.csv          # 🆕
 │   ├── us_pharmacy_formularies.csv
 │   ├── us_pharmacy_drugs.csv
 │   ├── us_pharmacy_members_01.csv
@@ -244,15 +286,17 @@ IgniteVSPostgres/
 │   └── us_pharmacy_enrollments_20.csv
 ├── database/
 │   ├── data/
-│   │   ├── PLAN_DATA.md                      # Plans documentation
-│   │   ├── PHARMACY_DATA.md                  # Pharmacies documentation 🆕
-│   │   ├── FORMULARY_DATA.md                 # Formularies documentation
-│   │   ├── DRUG_DATA.md                      # Drugs documentation
-│   │   ├── MEMBER_DATA.md                    # Members documentation
-│   │   ├── ENROLLMENT_DATA.md                # Enrollments documentation
-│   │   └── FORMULARY_DRUG_DATA.md            # Formulary-Drug documentation
+│   │   ├── PLAN_DATA.md                              # Plans documentation
+│   │   ├── PHARMACY_DATA.md                          # Pharmacies documentation
+│   │   ├── PHARMACY_NETWORK_DATA.md                  # Pharmacy Networks documentation 🆕
+│   │   ├── FORMULARY_DATA.md                         # Formularies documentation
+│   │   ├── DRUG_DATA.md                              # Drugs documentation
+│   │   ├── MEMBER_DATA.md                            # Members documentation
+│   │   ├── ENROLLMENT_DATA.md                        # Enrollments documentation
+│   │   └── FORMULARY_DRUG_DATA.md                    # Formulary-Drug documentation
 │   └── scripts/
-│       ├── generate_pharmacies.py            # 🆕
+│       ├── generate_pharmacies.py
+│       ├── generate_pharmacy_networks.py             # 🆕
 │       ├── generate_formularies.py
 │       ├── generate_drugs.py
 │       ├── generate_members.py
@@ -313,32 +357,45 @@ Progress indicators are shown during generation.
 After generation, verify the data:
 
 ```bash
+# Check pharmacies
+ls -l ../../src/main/resources/data/us_pharmacy_pharmacies.csv
+wc -l ../../src/main/resources/data/us_pharmacy_pharmacies.csv
+# Should show 50,001 (50,000 + 1 header)
+
+# Check pharmacy networks
+ls -l ../../src/main/resources/data/us_pharmacy_pharmacy_networks_*.csv | wc -l
+# Should show 3
+wc -l ../../src/main/resources/data/us_pharmacy_pharmacy_networks_*.csv
+# Should show ~550,000 total records
+
 # Check formularies
-ls -l ../data/us_pharmacy_formularies.csv
-wc -l ../data/us_pharmacy_formularies.csv
+ls -l ../../src/main/resources/data/us_pharmacy_formularies.csv
+wc -l ../../src/main/resources/data/us_pharmacy_formularies.csv
 # Should show 5,001 (5,000 + 1 header)
 
 # Check drugs
-ls -l ../data/us_pharmacy_drugs.csv
-wc -l ../data/us_pharmacy_drugs.csv
+ls -l ../../src/main/resources/data/us_pharmacy_drugs.csv
+wc -l ../../src/main/resources/data/us_pharmacy_drugs.csv
 # Should show 20,001 (20,000 + 1 header)
 
 # Check members
-ls -l ../data/us_pharmacy_members_*.csv | wc -l
+ls -l ../../src/main/resources/data/us_pharmacy_members_*.csv | wc -l
 # Should show 10
 
 # Check enrollments
-ls -l ../data/us_pharmacy_enrollments_*.csv | wc -l
+ls -l ../../src/main/resources/data/us_pharmacy_enrollments_*.csv | wc -l
 # Should show 20
 
 # Check file sizes
-du -h ../data/us_pharmacy_*.csv
+du -h ../../src/main/resources/data/us_pharmacy_*.csv
 
 # Count total records
-wc -l ../data/us_pharmacy_formularies.csv      # 5,001
-wc -l ../data/us_pharmacy_drugs.csv            # 20,001
-wc -l ../data/us_pharmacy_members_*.csv        # ~1,000,010
-wc -l ../data/us_pharmacy_enrollments_*.csv    # ~10,000,020
+wc -l ../../src/main/resources/data/us_pharmacy_pharmacies.csv           # 50,001
+wc -l ../../src/main/resources/data/us_pharmacy_pharmacy_networks_*.csv  # ~550,003
+wc -l ../../src/main/resources/data/us_pharmacy_formularies.csv          # 5,001
+wc -l ../../src/main/resources/data/us_pharmacy_drugs.csv                # 20,001
+wc -l ../../src/main/resources/data/us_pharmacy_members_*.csv            # ~1,000,010
+wc -l ../../src/main/resources/data/us_pharmacy_enrollments_*.csv        # ~10,000,020
 ```
 
 ## US Healthcare Enrollment Rules
@@ -401,6 +458,12 @@ Potential improvements to the generator:
 4. **Age-Based Plans:** Match plan types to member age (e.g., Medicare for 65+)
 5. **Employer Groups:** Create realistic employer group structures
 
+## Configuration Notes
+
+All scripts now use consistent output paths:
+- **OUTPUT_DIR:** `../../src/main/resources/data/` (relative to scripts directory)
+- This ensures all generated CSV files are placed in the correct location for the application
+
 ---
 
-**Last Updated:** 2025-11-07
+**Last Updated:** 2025-11-08

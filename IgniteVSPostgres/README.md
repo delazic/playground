@@ -1546,6 +1546,13 @@ make run-read-formulary-drug    # READ: Display formulary-drug statistics
 make run-update-formulary-drug  # UPDATE: Update a sample formulary-drug relationship
 make run-delete-formulary-drug  # DELETE: Delete a sample formulary-drug relationship
 make run-all-formulary-drug     # Run all CRUD operations for formulary-drug relationships
+
+# Pharmacy Network Operations 🆕
+make run-create-pharmacy-network  # CREATE: Insert pharmacy networks from CSV (550K records)
+make run-read-pharmacy-network    # READ: Display pharmacy network statistics
+make run-update-pharmacy-network  # UPDATE: Update a sample pharmacy network
+make run-delete-pharmacy-network  # DELETE: Delete a sample pharmacy network
+make run-all-pharmacy-network     # Run all CRUD operations for pharmacy networks
 ```
 
 #### Database Schema
@@ -1573,7 +1580,8 @@ The database schema is automatically created when Docker containers start. The i
 **Large-Scale Test Data:**
 - 34 US pharmacy benefit plans (CSV)
 - 20,000 US pharmacy drugs (1 CSV file)
-- 50,000 US pharmacies (1 CSV file) 🆕
+- 50,000 US pharmacies (1 CSV file)
+- 550,000 pharmacy network assignments (3 CSV files) 🆕
 - 1,000,000 members (10 CSV files)
 - 10,000,000 enrollments (20 CSV files)
 - 4,909 formularies (1 CSV file)
@@ -1652,11 +1660,25 @@ docker-compose exec -T postgres psql -U pbm_user -d pbm_db < database/init/02-se
 
 After setting up the development environment:
 
-1. **Load Test Data:**
+1. **Generate Test Data:**
+   ```bash
+   cd database/scripts
+   
+   # Generate all data files
+   python3 generate_pharmacies.py          # 50K pharmacies
+   python3 generate_pharmacy_networks.py   # 550K network assignments 🆕
+   python3 generate_drugs.py               # 20K drugs
+   python3 generate_formularies.py         # 5K formularies
+   python3 generate_members.py             # 1M members
+   python3 generate_enrollments.py         # 10M enrollments
+   python3 generate_formularies_drugs.py   # 10M formulary-drug relationships
+   ```
+
+2. **Load Test Data:**
    
    **Option A: Load All Data at Once (Recommended)**
    ```bash
-   # Load all data in correct order: Plan → Drug → Pharmacy → Member → Enrollment → Formulary → Formulary-Drug
+   # Load all data in correct order: Plan → Drug → Pharmacy → Pharmacy Networks → Member → Enrollment → Formulary → Formulary-Drug
    # This respects foreign key relationships automatically
    # ⚠️ Total time: 15-20 minutes for all 20+ million records
    make load-all-data
@@ -1670,37 +1692,41 @@ After setting up the development environment:
    # Step 2: Load drugs (20,000 drugs)
    make run-create-drug
    
-   # Step 3: Load pharmacies (50,000 pharmacies) 🆕
+   # Step 3: Load pharmacies (50,000 pharmacies)
    make run-create-pharmacy
    
-   # Step 4: Load members (1 million members)
+   # Step 4: Load pharmacy networks (550,000 network assignments) 🆕
+   make run-create-pharmacy-network
+   
+   # Step 5: Load members (1 million members)
    make run-create-member
    
-   # Step 5: Load enrollments (10 million enrollments)
+   # Step 6: Load enrollments (10 million enrollments)
    # ⚠️ This will take 5-10 minutes
    make run-create-enrollment
    
-   # Step 6: Load formularies (4,909 formularies)
+   # Step 7: Load formularies (4,909 formularies)
    make run-create-formulary
    
-   # Step 7: Load formulary-drug relationships (10 million relationships)
+   # Step 8: Load formulary-drug relationships (10 million relationships)
    # ⚠️ This will take 5-10 minutes
    make run-create-formulary-drug
    ```
 
-2. **Explore the Database:**
+3. **Explore the Database:**
    ```sql
    -- View all tables
    \dt
    
    -- Check loaded data
-   SELECT COUNT(*) FROM plan;        -- Should show 34
-   SELECT COUNT(*) FROM drug;        -- Should show 20,000
-   SELECT COUNT(*) FROM pharmacy;    -- Should show 50,000 🆕
-   SELECT COUNT(*) FROM member;      -- Should show 1,000,000
-   SELECT COUNT(*) FROM enrollment;  -- Should show 10,000,000
-   SELECT COUNT(*) FROM formulary;   -- Should show 4,909
-   SELECT COUNT(*) FROM formulary_drug; -- Should show 10,000,000
+   SELECT COUNT(*) FROM plan;              -- Should show 34
+   SELECT COUNT(*) FROM drug;              -- Should show 20,000
+   SELECT COUNT(*) FROM pharmacy;          -- Should show 50,000
+   SELECT COUNT(*) FROM pharmacy_network;  -- Should show 550,000 🆕
+   SELECT COUNT(*) FROM member;            -- Should show 1,000,000
+   SELECT COUNT(*) FROM enrollment;        -- Should show 10,000,000
+   SELECT COUNT(*) FROM formulary;         -- Should show 4,909
+   SELECT COUNT(*) FROM formulary_drug;    -- Should show 10,000,000
    
    -- Check enrollment statistics
    SELECT COUNT(*) FROM enrollment WHERE is_active = true;
@@ -1711,10 +1737,23 @@ After setting up the development environment:
    SELECT COUNT(*) FROM drug WHERE is_brand = true;
    SELECT drug_class, COUNT(*) FROM drug GROUP BY drug_class ORDER BY COUNT(*) DESC LIMIT 10;
    
-   -- Check pharmacy statistics 🆕
+   -- Check pharmacy statistics
    SELECT COUNT(*) FROM pharmacy WHERE is_active = true;
    SELECT pharmacy_type, COUNT(*) FROM pharmacy GROUP BY pharmacy_type ORDER BY COUNT(*) DESC;
    SELECT state, COUNT(*) FROM pharmacy GROUP BY state ORDER BY COUNT(*) DESC LIMIT 10;
+   
+   -- Check pharmacy network statistics 🆕
+   SELECT COUNT(*) FROM pharmacy_network;
+   SELECT network_type, COUNT(*) FROM pharmacy_network GROUP BY network_type ORDER BY COUNT(*) DESC;
+   SELECT network_tier, COUNT(*) FROM pharmacy_network GROUP BY network_tier;
+   SELECT status, COUNT(*) FROM pharmacy_network GROUP BY status;
+   SELECT COUNT(*) FROM pharmacy_network WHERE is_preferred = true;
+   
+   -- Check average networks per pharmacy 🆕
+   SELECT AVG(network_count) as avg_networks_per_pharmacy
+   FROM (SELECT pharmacy_id, COUNT(*) as network_count
+         FROM pharmacy_network
+         GROUP BY pharmacy_id) subq;
    
    -- Check formulary statistics
    SELECT COUNT(*) FROM formulary WHERE is_active = true;
@@ -1726,12 +1765,12 @@ After setting up the development environment:
    SELECT COUNT(*) FROM formulary_drug WHERE requires_prior_auth = true;
    ```
 
-3. **Review the Architecture:**
+4. **Review the Architecture:**
    - Read the [System Architecture](#system-architecture) section
    - Understand the [Database Design](#database-design)
    - Review [API Specifications](#api-specifications)
 
-4. **Start Development:**
+5. **Start Development:**
    - Proceed to Phase 1 tasks below
    - Implement core data models
    - Set up CI/CD pipeline

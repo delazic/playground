@@ -14,6 +14,7 @@ import dejanlazic.playground.inmemory.rdbms.converter.FormularyConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.FormularyDrugConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.MemberConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.PharmacyConverter;
+import dejanlazic.playground.inmemory.rdbms.converter.PharmacyNetworkConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.DrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.EnrollmentDAO;
@@ -21,6 +22,7 @@ import dejanlazic.playground.inmemory.rdbms.dao.FormularyDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.FormularyDrugDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.MemberDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.PharmacyDAO;
+import dejanlazic.playground.inmemory.rdbms.dao.PharmacyNetworkDAO;
 import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
 import dejanlazic.playground.inmemory.rdbms.model.Drug;
 import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
@@ -28,6 +30,7 @@ import dejanlazic.playground.inmemory.rdbms.model.Formulary;
 import dejanlazic.playground.inmemory.rdbms.model.FormularyDrug;
 import dejanlazic.playground.inmemory.rdbms.model.Member;
 import dejanlazic.playground.inmemory.rdbms.model.Pharmacy;
+import dejanlazic.playground.inmemory.rdbms.model.PharmacyNetwork;
 
 /**
  * Application to demonstrate CRUD operations with pure JDBC database connectivity
@@ -36,7 +39,7 @@ import dejanlazic.playground.inmemory.rdbms.model.Pharmacy;
  *   java App [operation] [entity]
  *
  * Operations: CREATE, READ, UPDATE, DELETE, ALL
- * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY, FORMULARY_DRUG, PHARMACY
+ * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY, FORMULARY_DRUG, PHARMACY, PHARMACY_NETWORK
  *
  * Examples:
  *   java App CREATE PLAN            - Insert benefit plans from CSV
@@ -102,6 +105,10 @@ public class App {
             
             if ("ALL".equals(entity) || "FORMULARY_DRUG".equals(entity)) {
                 executeFormularyDrugOperations(connector, operation);
+            }
+            
+            if ("ALL".equals(entity) || "PHARMACY_NETWORK".equals(entity)) {
+                executePharmacyNetworkOperations(connector, operation);
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error executing operations", e);
@@ -237,6 +244,25 @@ public class App {
                 readFormularyDrugs(connector);
                 updateFormularyDrug(connector);
                 deleteFormularyDrug(connector);
+            }
+            default -> System.err.println("❌ Unknown operation: " + operation);
+        }
+    }
+    
+    /**
+     * Execute CRUD operations for PharmacyNetwork entity
+     */
+    private static void executePharmacyNetworkOperations(DatabaseConnector connector, String operation) {
+        switch (operation) {
+            case "CREATE" -> createPharmacyNetworks(connector);
+            case "READ" -> readPharmacyNetworks(connector);
+            case "UPDATE" -> updatePharmacyNetwork(connector);
+            case "DELETE" -> deletePharmacyNetwork(connector);
+            case "ALL" -> {
+                createPharmacyNetworks(connector);
+                readPharmacyNetworks(connector);
+                updatePharmacyNetwork(connector);
+                deletePharmacyNetwork(connector);
             }
             default -> System.err.println("❌ Unknown operation: " + operation);
         }
@@ -1544,6 +1570,228 @@ public class App {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to insert formulary-drug relationships", e);
             System.err.println("❌ Failed to insert formulary-drug relationships: " + e.getMessage());
+            e.printStackTrace();
+        }
+        printSeparator();
+    }
+    
+    /**
+     * CREATE operation for PharmacyNetworks
+     */
+    private static void createPharmacyNetworks(DatabaseConnector connector) {
+        List<PharmacyNetwork> networks = loadPharmacyNetworks(connector);
+        if (networks != null) {
+            insertAndReportPharmacyNetworks(connector, networks);
+        }
+    }
+    
+    /**
+     * READ operation for PharmacyNetworks
+     */
+    private static void readPharmacyNetworks(DatabaseConnector connector) {
+        printHeader("Reading Pharmacy Networks");
+        PharmacyNetworkDAO dao = new PharmacyNetworkDAO(connector);
+        
+        try {
+            long count = dao.count();
+            System.out.println("📖 Found " + String.format("%,d", count) + " pharmacy network assignments in database");
+            System.out.println();
+            
+            if (count > 0) {
+                List<PharmacyNetwork> networks = dao.findAll();
+                
+                // Display first 10 networks
+                int displayCount = Math.min(10, networks.size());
+                System.out.println("Displaying first " + displayCount + " pharmacy networks:");
+                System.out.println("-".repeat(120));
+                System.out.printf("%-40s | %-15s | %-15s | %-15s | %-15s%n",
+                    "Network Name", "Type", "Tier", "Status", "Reimbursement");
+                System.out.println("-".repeat(120));
+                
+                for (int i = 0; i < displayCount; i++) {
+                    PharmacyNetwork n = networks.get(i);
+                    System.out.printf("%-40s | %-15s | %-15s | %-15s | %-15s%n",
+                        truncate(n.getNetworkName(), 40),
+                        n.getNetworkType(),
+                        n.getNetworkTier(),
+                        n.getStatus(),
+                        n.getReimbursementRate());
+                }
+                System.out.println("-".repeat(120));
+                
+                // Display statistics
+                long activeCount = networks.stream()
+                    .filter(n -> n.getStatus() == PharmacyNetwork.NetworkStatus.ACTIVE).count();
+                long preferredCount = networks.stream().filter(PharmacyNetwork::isPreferredTier).count();
+                long pbmCount = networks.stream().filter(PharmacyNetwork::isPBMNetwork).count();
+                long retailCount = networks.stream().filter(PharmacyNetwork::isRetailNetwork).count();
+                long specialtyCount = networks.stream().filter(PharmacyNetwork::isSpecialtyNetwork).count();
+                
+                System.out.println();
+                System.out.println("Pharmacy Network Statistics:");
+                System.out.println("  Active:        " + String.format("%,d", activeCount) +
+                    " (" + String.format("%.1f%%", (activeCount * 100.0 / count)) + ")");
+                System.out.println("  Preferred Tier:" + String.format("%,d", preferredCount) +
+                    " (" + String.format("%.1f%%", (preferredCount * 100.0 / count)) + ")");
+                System.out.println();
+                System.out.println("Network Type Distribution:");
+                System.out.println("  PBM:           " + String.format("%,d", pbmCount) +
+                    " (" + String.format("%.1f%%", (pbmCount * 100.0 / count)) + ")");
+                System.out.println("  Retail:        " + String.format("%,d", retailCount) +
+                    " (" + String.format("%.1f%%", (retailCount * 100.0 / count)) + ")");
+                System.out.println("  Specialty:     " + String.format("%,d", specialtyCount) +
+                    " (" + String.format("%.1f%%", (specialtyCount * 100.0 / count)) + ")");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read pharmacy networks", e);
+            System.err.println("❌ Failed to read pharmacy networks: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * UPDATE operation for PharmacyNetworks
+     */
+    private static void updatePharmacyNetwork(DatabaseConnector connector) {
+        printHeader("Updating a Pharmacy Network");
+        PharmacyNetworkDAO dao = new PharmacyNetworkDAO(connector);
+        
+        try {
+            // Find first network to update
+            List<PharmacyNetwork> networks = dao.findAll();
+            if (networks.isEmpty()) {
+                System.out.println("⚠️  No pharmacy networks found to update");
+                printSeparator();
+                return;
+            }
+            
+            PharmacyNetwork network = networks.get(0);
+            String originalName = network.getNetworkName();
+            PharmacyNetwork.NetworkStatus originalStatus = network.getStatus();
+            
+            // Update the network
+            network.setNetworkName(originalName + " (UPDATED)");
+            network.setStatus(PharmacyNetwork.NetworkStatus.INACTIVE);
+            
+            boolean updated = dao.update(network);
+            if (updated) {
+                System.out.println("✅ Successfully updated pharmacy network");
+                System.out.println("   Old name: " + originalName);
+                System.out.println("   New name: " + network.getNetworkName());
+                System.out.println("   Old status: " + originalStatus);
+                System.out.println("   New status: " + network.getStatus());
+            } else {
+                System.out.println("⚠️  Pharmacy network not found or not updated");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to update pharmacy network", e);
+            System.err.println("❌ Failed to update pharmacy network: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * DELETE operation for PharmacyNetworks
+     */
+    private static void deletePharmacyNetwork(DatabaseConnector connector) {
+        printHeader("Deleting a Pharmacy Network");
+        PharmacyNetworkDAO dao = new PharmacyNetworkDAO(connector);
+        
+        try {
+            // Find a network to delete
+            List<PharmacyNetwork> networks = dao.findAll();
+            if (networks.isEmpty()) {
+                System.out.println("⚠️  No pharmacy networks found to delete");
+                printSeparator();
+                return;
+            }
+            
+            // Delete the last network
+            PharmacyNetwork networkToDelete = networks.get(networks.size() - 1);
+            String networkName = networkToDelete.getNetworkName();
+            
+            boolean deleted = dao.delete(networkToDelete.getNetworkId());
+            if (deleted) {
+                System.out.println("✅ Successfully deleted pharmacy network: " + networkName);
+            } else {
+                System.out.println("⚠️  Pharmacy network not found or not deleted");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to delete pharmacy network", e);
+            System.err.println("❌ Failed to delete pharmacy network: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * Load pharmacy networks from CSV files
+     * NOTE: Pharmacies must be loaded first (foreign key constraint)
+     * @return List of pharmacy networks, or null if loading fails
+     */
+    private static List<PharmacyNetwork> loadPharmacyNetworks(DatabaseConnector connector) {
+        printHeader("Loading and Inserting Pharmacy Networks");
+        
+        // Check if pharmacies exist first
+        PharmacyDAO pharmacyDAO = new PharmacyDAO(connector);
+        try {
+            long pharmacyCount = pharmacyDAO.count();
+            if (pharmacyCount == 0) {
+                System.err.println("❌ ERROR: No pharmacies found in database!");
+                System.err.println("   Pharmacy networks require existing pharmacies (foreign key constraint).");
+                System.err.println("   Please run 'make run-create-pharmacy' first to load pharmacies.");
+                return null;
+            }
+            System.out.println("✓ Found " + String.format("%,d", pharmacyCount) + " pharmacies in database");
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to check pharmacy count", e);
+            System.err.println("❌ Failed to verify pharmacies exist: " + e.getMessage());
+            return null;
+        }
+        
+        PharmacyNetworkConverter networkConverter = new PharmacyNetworkConverter();
+        try {
+            System.out.println("📂 Scanning for pharmacy network CSV files...");
+            List<PharmacyNetwork> networks = networkConverter.loadAllPharmacyNetworks();
+            System.out.println("✅ Loaded " + String.format("%,d", networks.size()) + " pharmacy networks from CSV files");
+            System.out.println("💡 Pharmacy references will be resolved via database JOINs during insert");
+            
+            return networks;
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load pharmacy networks", ex);
+            System.err.println("❌ Failed to load pharmacy networks: " + ex.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Insert pharmacy networks into database and report results using DAO
+     * @param connector Database connector
+     * @param networks List of pharmacy networks to insert
+     */
+    private static void insertAndReportPharmacyNetworks(DatabaseConnector connector, List<PharmacyNetwork> networks) {
+        PharmacyNetworkDAO dao = new PharmacyNetworkDAO(connector);
+        
+        System.out.println("📝 Inserting " + String.format("%,d", networks.size()) + " pharmacy networks into database...");
+        System.out.println("⏳ This may take several minutes for large datasets...");
+        System.out.println("💡 Progress updates every 10,000 records");
+        
+        long startTime = System.currentTimeMillis();
+        try {
+            int inserted = dao.insertBatch(networks);
+            long totalTime = System.currentTimeMillis() - startTime;
+            double seconds = totalTime / 1000.0;
+            double recordsPerSecond = inserted / seconds;
+            
+            System.out.println("✅ Successfully inserted " + String.format("%,d", inserted) + " pharmacy networks");
+            System.out.println("⏱️  Total time: " + String.format("%.2f", seconds) + " seconds");
+            System.out.println("🚀 Throughput: " + String.format("%,.0f", recordsPerSecond) + " records/sec");
+            
+            // Display count
+            long totalCount = dao.count();
+            System.out.println("📊 Total pharmacy networks in database: " + String.format("%,d", totalCount));
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to insert pharmacy networks", e);
+            System.err.println("❌ Failed to insert pharmacy networks: " + e.getMessage());
             e.printStackTrace();
         }
         printSeparator();
