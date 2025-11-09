@@ -2,7 +2,6 @@ package dejanlazic.playground.inmemory.rdbms.model;
 
 import java.time.LocalDate;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * POJO representing an enrollment record
@@ -10,7 +9,7 @@ import java.util.UUID;
  */
 public class Enrollment {
     
-    private UUID enrollmentId;
+    private Long enrollmentId;
     private String memberNumber;
     private String planCode;
     private String groupNumber;
@@ -34,11 +33,11 @@ public class Enrollment {
     }
     
     // Getters and Setters
-    public UUID getEnrollmentId() {
+    public Long getEnrollmentId() {
         return enrollmentId;
     }
     
-    public void setEnrollmentId(UUID enrollmentId) {
+    public void setEnrollmentId(Long enrollmentId) {
         this.enrollmentId = enrollmentId;
     }
     
