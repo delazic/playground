@@ -173,8 +173,21 @@ public class ClaimConverter {
         // Member info
         String memberId = fields[idx++].trim();
         if (!memberId.isEmpty()) {
-            // Convert member number string to Long for lookup
-            claim.setMemberId(Long.parseLong(memberId));
+            // Handle member ID - could be numeric or string format like "MBR000466742"
+            try {
+                // Try parsing as Long first (for backward compatibility)
+                claim.setMemberId(Long.parseLong(memberId));
+            } catch (NumberFormatException e) {
+                // If it's a string format like "MBR000466742", extract the numeric part
+                // or use a hash code for lookup
+                String numericPart = memberId.replaceAll("[^0-9]", "");
+                if (!numericPart.isEmpty()) {
+                    claim.setMemberId(Long.parseLong(numericPart));
+                } else {
+                    // Fallback: use hash code if no numeric part found
+                    claim.setMemberId((long) memberId.hashCode() & 0x7FFFFFFFL);
+                }
+            }
         }
         
         claim.setPersonCode(fields[idx++].trim());

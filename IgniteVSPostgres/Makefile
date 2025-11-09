@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network load-all-data run-claim-simulation
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network load-all-data run-claim-simulation run-claim-simulation-1x run-claim-simulation-100x run-claim-simulation-1000x
 
 # Default target
 help:
@@ -86,6 +86,9 @@ help:
 	@echo ""
 	@echo "Claim Simulation Operations:"
 	@echo "  make run-claim-simulation        - Run claim adjudication simulation (1M claims at 100x speed)"
+	@echo "  make run-claim-simulation-1x     - Run at 1x speed (real-time, ~24 hours)"
+	@echo "  make run-claim-simulation-100x   - Run at 100x speed (~15 minutes)"
+	@echo "  make run-claim-simulation-1000x  - Run at 1000x speed (~1-2 minutes)"
 
 # Start all services
 start:
@@ -527,14 +530,42 @@ load-all-data: build
 # Claim Simulation
 # ============================================================================
 
-# Run claim adjudication simulation (1M claims at 100x speed)
-run-claim-simulation: build
+# Run claim adjudication simulation (default: 100x speed)
+run-claim-simulation: run-claim-simulation-100x
+
+# Run claim adjudication simulation at 1x speed (real-time)
+run-claim-simulation-1x: build
 	@echo "════════════════════════════════════════════════════════════════"
-	@echo "Claim Adjudication Simulation"
+	@echo "Claim Adjudication Simulation - 1x Speed (Real-Time)"
 	@echo "════════════════════════════════════════════════════════════════"
 	@echo ""
 	@echo "This will simulate processing 1 million pharmacy claims per day"
-	@echo "at 100x speed (real-time would take 24 hours, this takes ~15 minutes)"
+	@echo "at REAL-TIME speed (1x) - simulating an actual 24-hour day"
+	@echo ""
+	@echo "Prerequisites:"
+	@echo "  1. Claims data generated: database/scripts/generate_1m_claims.py"
+	@echo "  2. Reference data loaded: make load-all-data"
+	@echo ""
+	@echo "⚠️  Expected time: ~24 hours (full day simulation)"
+	@echo "⏳ Processing 1,000,000 claims with realistic adjudication logic..."
+	@echo "💡 Tip: Use 100x or 1000x speed for faster testing"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.ClaimSimulationApp" -Dexec.args="1"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "✅ CLAIM SIMULATION COMPLETE!"
+	@echo "════════════════════════════════════════════════════════════════"
+	@$(MAKE) --no-print-directory show-claim-stats
+
+# Run claim adjudication simulation at 100x speed
+run-claim-simulation-100x: build
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Claim Adjudication Simulation - 100x Speed"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "This will simulate processing 1 million pharmacy claims per day"
+	@echo "at 100x speed (24 hours compressed to ~15 minutes)"
 	@echo ""
 	@echo "Prerequisites:"
 	@echo "  1. Claims data generated: database/scripts/generate_1m_claims.py"
@@ -549,9 +580,40 @@ run-claim-simulation: build
 	@echo "════════════════════════════════════════════════════════════════"
 	@echo "✅ CLAIM SIMULATION COMPLETE!"
 	@echo "════════════════════════════════════════════════════════════════"
+	@$(MAKE) --no-print-directory show-claim-stats
+
+# Run claim adjudication simulation at 1000x speed
+run-claim-simulation-1000x: build
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Claim Adjudication Simulation - 1000x Speed"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "This will simulate processing 1 million pharmacy claims per day"
+	@echo "at 1000x speed (24 hours compressed to ~1-2 minutes)"
+	@echo ""
+	@echo "Prerequisites:"
+	@echo "  1. Claims data generated: database/scripts/generate_1m_claims.py"
+	@echo "  2. Reference data loaded: make load-all-data"
+	@echo ""
+	@echo "⚠️  Expected time: 1-2 minutes"
+	@echo "⏳ Processing 1,000,000 claims with realistic adjudication logic..."
+	@echo "💡 This is the fastest mode for testing and development"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.ClaimSimulationApp" -Dexec.args="1000"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "✅ CLAIM SIMULATION COMPLETE!"
+	@echo "════════════════════════════════════════════════════════════════"
+	@$(MAKE) --no-print-directory show-claim-stats
+
+# Helper target to show claim statistics
+show-claim-stats:
 	@echo ""
 	@echo "Analyze results with:"
 	@echo "  make db-shell"
+	@echo ""
+	@echo "Useful queries:"
 	@echo "  SELECT COUNT(*) FROM claim;"
 	@echo "  SELECT claim_status, COUNT(*) FROM claim GROUP BY claim_status;"
 	@echo "  SELECT rejection_code, COUNT(*) FROM claim WHERE claim_status = 'REJECTED' GROUP BY rejection_code;"
