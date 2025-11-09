@@ -9,7 +9,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,7 +20,7 @@ import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
  * Data Access Object for Enrollment entity
  * Provides CRUD operations for enrollments
  */
-public class EnrollmentDAO implements BaseDAO<Enrollment, UUID> {
+public class EnrollmentDAO implements BaseDAO<Enrollment, Long> {
     
     private static final Logger LOGGER = Logger.getLogger(EnrollmentDAO.class.getName());
     
@@ -101,7 +100,7 @@ public class EnrollmentDAO implements BaseDAO<Enrollment, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    enrollment.setEnrollmentId(rs.getObject("enrollment_id", UUID.class));
+                    enrollment.setEnrollmentId(rs.getLong("enrollment_id"));
                     metrics.setRecordCount(1);
                     metrics.setRecordSizeBytes(estimateEnrollmentSize(enrollment));
                     LOGGER.log(Level.INFO, "Inserted enrollment for member: {0}", enrollment.getMemberNumber());
@@ -167,7 +166,7 @@ public class EnrollmentDAO implements BaseDAO<Enrollment, UUID> {
     }
     
     @Override
-    public Optional<Enrollment> findById(UUID id) throws SQLException {
+    public Optional<Enrollment> findById(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Enrollment", "SELECT_BY_ID");
         
         try (Connection conn = connector.getConnection();
@@ -275,7 +274,7 @@ public class EnrollmentDAO implements BaseDAO<Enrollment, UUID> {
     }
     
     @Override
-    public boolean delete(UUID id) throws SQLException {
+    public boolean delete(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Enrollment", "DELETE");
         
         try (Connection conn = connector.getConnection();
@@ -333,7 +332,7 @@ public class EnrollmentDAO implements BaseDAO<Enrollment, UUID> {
     }
     
     @Override
-    public boolean exists(UUID id) throws SQLException {
+    public boolean exists(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Enrollment", "EXISTS");
         
         try (Connection conn = connector.getConnection();
@@ -373,7 +372,7 @@ public class EnrollmentDAO implements BaseDAO<Enrollment, UUID> {
     private Enrollment mapResultSetToEnrollment(ResultSet rs) throws SQLException {
         Enrollment enrollment = new Enrollment();
         
-        enrollment.setEnrollmentId(rs.getObject("enrollment_id", UUID.class));
+        enrollment.setEnrollmentId(rs.getLong("enrollment_id"));
         enrollment.setMemberNumber(rs.getString("member_number"));
         enrollment.setPlanCode(rs.getString("plan_code"));
         enrollment.setGroupNumber(rs.getString("group_number"));
