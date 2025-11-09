@@ -34,6 +34,17 @@ public class DrugDAO implements BaseDAO<Drug, Long> {
             ndc_code, drug_name, generic_name, strength, dosage_form,
             manufacturer, drug_class, is_generic, is_brand, awp_price, mac_price
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (ndc_code) DO UPDATE SET
+            drug_name = EXCLUDED.drug_name,
+            generic_name = EXCLUDED.generic_name,
+            strength = EXCLUDED.strength,
+            dosage_form = EXCLUDED.dosage_form,
+            manufacturer = EXCLUDED.manufacturer,
+            drug_class = EXCLUDED.drug_class,
+            is_generic = EXCLUDED.is_generic,
+            is_brand = EXCLUDED.is_brand,
+            awp_price = EXCLUDED.awp_price,
+            mac_price = EXCLUDED.mac_price
         RETURNING drug_id
         """;
     

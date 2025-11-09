@@ -36,6 +36,17 @@ public class MemberDAO implements BaseDAO<Member, UUID> {
             member_number, first_name, last_name, date_of_birth, gender,
             address, city, state, zip_code, phone, email
         ) VALUES (?, ?, ?, ?, ?::gender_type, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (member_number) DO UPDATE SET
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            date_of_birth = EXCLUDED.date_of_birth,
+            gender = EXCLUDED.gender,
+            address = EXCLUDED.address,
+            city = EXCLUDED.city,
+            state = EXCLUDED.state,
+            zip_code = EXCLUDED.zip_code,
+            phone = EXCLUDED.phone,
+            email = EXCLUDED.email
         RETURNING member_id
         """;
     

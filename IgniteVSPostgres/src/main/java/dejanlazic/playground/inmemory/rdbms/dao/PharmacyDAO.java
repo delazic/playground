@@ -31,9 +31,19 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, Long> {
     // SQL Statements
     private static final String INSERT_SQL = """
         INSERT INTO pharmacy (
-            ncpdp_id, pharmacy_name, npi, address, city, state, zip_code, phone, 
+            ncpdp_id, pharmacy_name, npi, address, city, state, zip_code, phone,
             pharmacy_type, is_active
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::pharmacy_type, ?)
+        ON CONFLICT (ncpdp_id) DO UPDATE SET
+            pharmacy_name = EXCLUDED.pharmacy_name,
+            npi = EXCLUDED.npi,
+            address = EXCLUDED.address,
+            city = EXCLUDED.city,
+            state = EXCLUDED.state,
+            zip_code = EXCLUDED.zip_code,
+            phone = EXCLUDED.phone,
+            pharmacy_type = EXCLUDED.pharmacy_type,
+            is_active = EXCLUDED.is_active
         RETURNING pharmacy_id
         """;
     

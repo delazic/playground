@@ -37,6 +37,26 @@ public class BenefitPlanDAO implements BaseDAO<BenefitPlan, UUID> {
             tier1_coinsurance, tier2_coinsurance, tier3_coinsurance, tier4_coinsurance, tier5_coinsurance,
             mail_order_available, specialty_pharmacy_required, description
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (plan_code) DO UPDATE SET
+            plan_name = EXCLUDED.plan_name,
+            plan_type = EXCLUDED.plan_type,
+            plan_category = EXCLUDED.plan_category,
+            effective_date = EXCLUDED.effective_date,
+            annual_deductible = EXCLUDED.annual_deductible,
+            out_of_pocket_max = EXCLUDED.out_of_pocket_max,
+            tier1_copay = EXCLUDED.tier1_copay,
+            tier2_copay = EXCLUDED.tier2_copay,
+            tier3_copay = EXCLUDED.tier3_copay,
+            tier4_copay = EXCLUDED.tier4_copay,
+            tier5_copay = EXCLUDED.tier5_copay,
+            tier1_coinsurance = EXCLUDED.tier1_coinsurance,
+            tier2_coinsurance = EXCLUDED.tier2_coinsurance,
+            tier3_coinsurance = EXCLUDED.tier3_coinsurance,
+            tier4_coinsurance = EXCLUDED.tier4_coinsurance,
+            tier5_coinsurance = EXCLUDED.tier5_coinsurance,
+            mail_order_available = EXCLUDED.mail_order_available,
+            specialty_pharmacy_required = EXCLUDED.specialty_pharmacy_required,
+            description = EXCLUDED.description
         RETURNING plan_id
         """;
     
