@@ -26,7 +26,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     
     @Override
     public Optional<Claim> findById(Long id) throws SQLException {
-        String sql = "SELECT * FROM claims WHERE claim_id = ?";
+        String sql = "SELECT * FROM claim WHERE claim_id = ?";
         
         try (Connection conn = connector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -47,7 +47,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
      * Find claim by claim number.
      */
     public Optional<Claim> findByClaimNumber(String claimNumber) throws SQLException {
-        String sql = "SELECT * FROM claims WHERE claim_number = ?";
+        String sql = "SELECT * FROM claim WHERE claim_number = ?";
         
         try (Connection conn = connector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -66,7 +66,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     
     @Override
     public List<Claim> findAll() throws SQLException {
-        String sql = "SELECT * FROM claims ORDER BY received_timestamp DESC LIMIT 1000";
+        String sql = "SELECT * FROM claim ORDER BY received_timestamp DESC LIMIT 1000";
         List<Claim> claims = new ArrayList<>();
         
         try (Connection conn = connector.getConnection();
@@ -84,7 +84,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     @Override
     public Claim insert(Claim claim) throws SQLException {
         String sql = """
-            INSERT INTO claims (
+            INSERT INTO claim (
                 claim_number, transaction_type, received_timestamp, processed_timestamp,
                 date_of_service, member_id, person_code, pharmacy_id, pharmacy_npi,
                 prescription_number, ndc, drug_id, quantity_dispensed, days_supply,
@@ -139,7 +139,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     @Override
     public int insertBatch(List<Claim> claims) throws SQLException {
         String sql = """
-            INSERT INTO claims (
+            INSERT INTO claim (
                 claim_number, transaction_type, received_timestamp, processed_timestamp,
                 date_of_service, member_id, person_code, pharmacy_id, pharmacy_npi,
                 prescription_number, ndc, drug_id, quantity_dispensed, days_supply,
@@ -221,7 +221,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     @Override
     public boolean update(Claim claim) throws SQLException {
         String sql = """
-            UPDATE claims SET
+            UPDATE claim SET
                 status = ?, response_code = ?, response_message = ?,
                 processed_timestamp = ?, processing_time_ms = ?,
                 patient_pay_amount = ?, plan_pay_amount = ?,
@@ -250,7 +250,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     
     @Override
     public boolean delete(Long id) throws SQLException {
-        String sql = "DELETE FROM claims WHERE claim_id = ?";
+        String sql = "DELETE FROM claim WHERE claim_id = ?";
         
         try (Connection conn = connector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -262,7 +262,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     
     @Override
     public long count() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM claims";
+        String sql = "SELECT COUNT(*) FROM claim";
         
         try (Connection conn = connector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -278,7 +278,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     
     @Override
     public boolean exists(Long id) throws SQLException {
-        String sql = "SELECT EXISTS(SELECT 1 FROM claims WHERE claim_id = ?)";
+        String sql = "SELECT EXISTS(SELECT 1 FROM claim WHERE claim_id = ?)";
         
         try (Connection conn = connector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -295,7 +295,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
      * Count claims by status.
      */
     public long countByStatus(String status) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM claims WHERE status = ?";
+        String sql = "SELECT COUNT(*) FROM claim WHERE status = ?";
         
         try (Connection conn = connector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -316,7 +316,7 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
      * Get average processing time in milliseconds.
      */
     public double getAverageProcessingTime() throws SQLException {
-        String sql = "SELECT AVG(processing_time_ms) FROM claims WHERE processing_time_ms IS NOT NULL";
+        String sql = "SELECT AVG(processing_time_ms) FROM claim WHERE processing_time_ms IS NOT NULL";
         
         try (Connection conn = connector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);

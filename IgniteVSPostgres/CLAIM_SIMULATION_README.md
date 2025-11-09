@@ -103,26 +103,47 @@ cd database/scripts
 python3 generate_1m_claims.py
 ```
 
-This creates: `src/main/resources/data/us_pharmacy_claims_simulation_1m.csv`
+**This creates multiple files (~30MB each):**
+- `src/main/resources/data/us_pharmacy_claims_simulation_1m_01.csv` (~23 MB)
+- `src/main/resources/data/us_pharmacy_claims_simulation_1m_02.csv` (~23 MB)
+- `src/main/resources/data/us_pharmacy_claims_simulation_1m_03.csv` (~23 MB)
+- ... (9 files total, ~197 MB combined)
 
 **Expected output:**
-- 1,000,000 claims
+- 1,000,000 claims split across 9 files
+- Each file under GitHub's 100MB limit
 - Distributed across 24 hours
 - Realistic hourly patterns (peak during business hours)
 - NCPDP-compliant format
+- Member IDs in string format (e.g., "MBR000466742")
+
+**Configuration:**
+You can modify these settings in `generate_1m_claims.py`:
+- `TARGET_FILE_SIZE_MB = 30` - Target size for each file
+- `TOTAL_CLAIMS = 1_000_000` - Total number of claims
 
 ## Running the Simulation
 
-### Quick Start
+### Using Make Commands (Recommended)
 
-Run at 100x speed (recommended for testing):
-
+**Quick Test (1-2 minutes):**
 ```bash
-mvn clean compile
-mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.ClaimSimulationApp" -Dexec.args="100"
+make run-claim-simulation-1000x
 ```
 
-### Speed Options
+**Standard Testing (12-15 minutes):**
+```bash
+make run-claim-simulation-100x
+# or simply:
+make run-claim-simulation
+```
+
+**Real-Time Simulation (24 hours):**
+```bash
+make run-claim-simulation-1x
+```
+
+### Using Maven Directly
 
 **Real-time simulation (1x speed):**
 ```bash
@@ -131,13 +152,6 @@ mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.ClaimSimula
 - Simulates actual PBM throughput
 - Takes ~24 hours to complete
 - Use for realistic performance testing
-
-**10x speed:**
-```bash
-mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.ClaimSimulationApp" -Dexec.args="10"
-```
-- Completes in ~2.4 hours
-- Good for extended testing
 
 **100x speed:**
 ```bash
@@ -152,6 +166,16 @@ mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.ClaimSimula
 ```
 - Completes in ~1-2 minutes
 - Maximum speed for quick validation
+
+### What Happens
+
+1. **File Detection:** Application automatically scans for all `us_pharmacy_claims_simulation_1m_*.csv` files
+2. **Multi-File Loading:** Loads from all 9 split files sequentially
+3. **Member ID Parsing:** Handles both numeric and string member IDs (e.g., "MBR000466742")
+4. **Sequential Processing:** Processes claims with realistic throughput patterns
+5. **Progress Reporting:** Shows real-time statistics for each batch
+6. **Database Persistence:** Saves all adjudicated claims to PostgreSQL
+7. **Final Summary:** Displays overall statistics and performance metrics
 
 ## Expected Output
 
@@ -187,9 +211,14 @@ Target: 1,000,000 claims
 ============================================================
 
 Step 1: Loading claims from CSV...
-Loaded 100,000 claims...
-Loaded 200,000 claims...
+Loading from file 1: /data/us_pharmacy_claims_simulation_1m_01.csv
+  Loaded 125,829 claims from file 1
+Loading from file 2: /data/us_pharmacy_claims_simulation_1m_02.csv
+  Loaded 125,829 claims from file 2
 ...
+Loading from file 9: /data/us_pharmacy_claims_simulation_1m_09.csv
+  Loaded 83,886 claims from file 9
+Total claims loaded: 1,000,000
 ✓ Loaded 1,000,000 claims in 45.2 seconds
 
 Step 2: Processing claims with adjudication...
@@ -380,8 +409,12 @@ cd database/scripts
 python3 generate_1m_claims.py
 ```
 
-Ensure the file exists at:
-`src/main/resources/data/us_pharmacy_claims_simulation_1m.csv`
+Ensure the files exist at:
+- `src/main/resources/data/us_pharmacy_claims_simulation_1m_01.csv`
+- `src/main/resources/data/us_pharmacy_claims_simulation_1m_02.csv`
+- ... (9 files total)
+
+The application will automatically detect and load all files matching the pattern `us_pharmacy_claims_simulation_1m_*.csv`
 
 ### Issue: "Reference data missing"
 
