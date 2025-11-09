@@ -40,7 +40,12 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
             pharmacy_id, network_name, network_type, network_tier, contract_type,
             effective_date, termination_date, status, reimbursement_rate, dispensing_fee,
             is_preferred, is_mail_order, is_specialty
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        )
+        SELECT
+            p.pharmacy_id,
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        FROM pharmacy p
+        WHERE p.ncpdp_id = ?
         RETURNING network_id
         """;
     
@@ -456,10 +461,10 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
     
     /**
      * Set PreparedStatement parameters from a PharmacyNetwork object
+     * Uses ncpdpId to lookup pharmacy_id via JOIN in SQL
      */
     private void setPharmacyNetworkParameters(PreparedStatement ps, PharmacyNetwork network) throws SQLException {
         int idx = 1;
-        ps.setObject(idx++, network.getPharmacyId());
         ps.setString(idx++, network.getNetworkName());
         ps.setString(idx++, network.getNetworkType() != null ? network.getNetworkType().name() : "RETAIL");
         ps.setString(idx++, network.getNetworkTier() != null ? network.getNetworkTier().name() : "STANDARD");
@@ -472,6 +477,7 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
         ps.setBoolean(idx++, network.isPreferred());
         ps.setBoolean(idx++, network.isMailOrder());
         ps.setBoolean(idx++, network.isSpecialty());
+        ps.setString(idx++, network.getNcpdpId());
     }
     
     /**

@@ -144,6 +144,53 @@ Networks of independent pharmacies:
 - Inactive contracts: past termination dates
 - Pending contracts: no termination date
 
+## Data Loading Implementation
+
+### Foreign Key Resolution
+The pharmacy network data uses a **foreign key resolution pattern** to map pharmacy references to actual database IDs:
+
+1. **CSV Format**: Contains synthetic pharmacy IDs (e.g., `PHARM00000001`)
+2. **Mapping Process**:
+   - `PharmacyNetworkConverter` loads the pharmacy CSV to create a mapping
+   - Synthetic IDs are mapped to actual NCPDP IDs (e.g., `1849423`)
+3. **Database Insert**:
+   - `PharmacyNetworkDAO` uses a JOIN query to resolve NCPDP ID to pharmacy_id UUID
+   - SQL: `SELECT p.pharmacy_id FROM pharmacy p WHERE p.ncpdp_id = ?`
+
+This pattern ensures referential integrity and follows the same approach used by:
+- `EnrollmentDAO` (member_number → member_id, plan_code → plan_id)
+- `FormularyDrugDAO` (formulary_code → formulary_id, ndc_code → drug_id)
+
+### Data Quality Handling
+
+#### Invalid Pharmacy References
+- **Issue**: CSV may contain references to pharmacies beyond available data
+- **Solution**: Records with non-existent pharmacy IDs are skipped with warnings
+- **Example**: `PHARM00100000` when only 50,000 pharmacies exist
+
+#### Date Constraint Violations
+- **Issue**: Some records have termination_date before effective_date
+- **Solution**: Invalid date ranges are automatically corrected:
+  - If `termination_date < effective_date`, termination_date is set to NULL
+  - Warning is logged for each correction
+- **Database Constraint**: `CHECK (termination_date IS NULL OR termination_date >= effective_date)`
+
+### Java Implementation
+
+#### Model Changes
+- Added `ncpdpId` field to `PharmacyNetwork` model
+- Used for pharmacy lookup during database insert
+
+#### Converter Enhancements
+- Loads pharmacy ID mapping from `us_pharmacy_pharmacies.csv`
+- Validates and corrects date ranges
+- Skips records with invalid pharmacy references
+
+#### DAO Pattern
+- Uses SELECT with JOIN for foreign key resolution
+- Ensures data integrity at database level
+- Batch insert with transaction support
+
 ## Usage
 
 ### Generate Data

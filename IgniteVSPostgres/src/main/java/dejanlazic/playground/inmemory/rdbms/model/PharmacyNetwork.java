@@ -46,6 +46,7 @@ public class PharmacyNetwork {
     
     private UUID networkId;
     private UUID pharmacyId;
+    private String ncpdpId;  // Business key for pharmacy lookup
     private String networkName;
     private NetworkType networkType;
     private NetworkTier networkTier;
@@ -92,6 +93,14 @@ public class PharmacyNetwork {
     
     public void setPharmacyId(UUID pharmacyId) {
         this.pharmacyId = pharmacyId;
+    }
+    
+    public String getNcpdpId() {
+        return ncpdpId;
+    }
+    
+    public void setNcpdpId(String ncpdpId) {
+        this.ncpdpId = ncpdpId;
     }
     
     public String getNetworkName() {

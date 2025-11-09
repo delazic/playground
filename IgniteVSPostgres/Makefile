@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network load-all-data
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network load-all-data run-claim-simulation
 
 # Default target
 help:
@@ -83,6 +83,9 @@ help:
 	@echo "  make run-update-pharmacy-network - UPDATE: Update a sample pharmacy network"
 	@echo "  make run-delete-pharmacy-network - DELETE: Delete a sample pharmacy network"
 	@echo "  make run-all-pharmacy-network    - Run all CRUD operations for pharmacy networks"
+	@echo ""
+	@echo "Claim Simulation Operations:"
+	@echo "  make run-claim-simulation        - Run claim adjudication simulation (1M claims at 100x speed)"
 
 # Start all services
 start:
@@ -518,4 +521,38 @@ load-all-data: build
 	@echo "  SELECT COUNT(*) FROM formulary;"
 	@echo "  SELECT COUNT(*) FROM formulary_drug;"
 	@echo "  SELECT COUNT(*) FROM pharmacy_network;"
+	@echo ""
+
+# ============================================================================
+# Claim Simulation
+# ============================================================================
+
+# Run claim adjudication simulation (1M claims at 100x speed)
+run-claim-simulation: build
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "Claim Adjudication Simulation"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "This will simulate processing 1 million pharmacy claims per day"
+	@echo "at 100x speed (real-time would take 24 hours, this takes ~15 minutes)"
+	@echo ""
+	@echo "Prerequisites:"
+	@echo "  1. Claims data generated: database/scripts/generate_1m_claims.py"
+	@echo "  2. Reference data loaded: make load-all-data"
+	@echo ""
+	@echo "⚠️  Expected time: 12-15 minutes"
+	@echo "⏳ Processing 1,000,000 claims with realistic adjudication logic..."
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.ClaimSimulationApp" -Dexec.args="100"
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo "✅ CLAIM SIMULATION COMPLETE!"
+	@echo "════════════════════════════════════════════════════════════════"
+	@echo ""
+	@echo "Analyze results with:"
+	@echo "  make db-shell"
+	@echo "  SELECT COUNT(*) FROM claim;"
+	@echo "  SELECT claim_status, COUNT(*) FROM claim GROUP BY claim_status;"
+	@echo "  SELECT rejection_code, COUNT(*) FROM claim WHERE claim_status = 'REJECTED' GROUP BY rejection_code;"
 	@echo ""

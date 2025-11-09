@@ -167,17 +167,73 @@ cd database/scripts
 python3 generate_pharmacy_networks.py
 ```
 
+### 6. generate_claims.py 🆕
+Generates 10,000,000 realistic pharmacy claims records with proper foreign key relationships.
+
+**Prerequisites:**
+- Member CSV files must exist (run `generate_members.py` first)
+- Pharmacy CSV file must exist (run `generate_pharmacies.py` first)
+- Drug CSV file must exist (run `generate_drugs.py` first)
+- Plan CSV file must exist (`us_pharmacy_plans.csv`)
+
+**Output:**
+- Multiple CSV files: `us_pharmacy_claims_01.csv`, `us_pharmacy_claims_02.csv`, etc.
+- ~10,000,000 claims total
+- ~30MB per file
+- Total size: ~1.2GB
+
+**Claim Status Distribution:**
+- Approved: 87% (~8,700,000 claims)
+- Rejected: 10% (~1,000,000 claims)
+- Pending: 2% (~200,000 claims)
+- Reversed: 0.5% (~50,000 claims)
+- Rebilled: 0.5% (~50,000 claims)
+
+**Rejection Code Distribution (for rejected claims):**
+- 70 (Product Not Covered): 25%
+- 75 (Prior Authorization Required): 30%
+- 76 (Plan Limitations Exceeded): 15%
+- 79 (Refill Too Soon): 15%
+- 85 (Patient Not Covered): 10%
+- 88 (DUR Reject): 5%
+
+**Days Supply Distribution:**
+- 30 days: 60%
+- 90 days: 20%
+- 60 days: 15%
+- 7 days: 3%
+- 14 days: 2%
+
+**Features:**
+- Unique claim IDs (UUID format)
+- Sequential claim numbers (CLM000000000000001, etc.)
+- Realistic pricing based on days supply and quantity
+- Tier-based patient copays ($5-$150)
+- Coinsurance for specialty drugs (30%)
+- Service dates spanning 2024-2025
+- Processing timestamps with realistic delays
+- Proper foreign key relationships to members, pharmacies, drugs, and plans
+
+**Usage:**
+```bash
+cd database/scripts
+python3 generate_claims.py
+```
+
+**Expected Runtime:** ~15-30 minutes for 10 million claims
+
 ## Data Generation Order
 
 **IMPORTANT:** Generate data in this order to satisfy dependencies:
 
 1. **Plans** (already exists as `us_pharmacy_plans.csv`)
 2. **Pharmacies** (run `generate_pharmacies.py`) - Independent, can run anytime
-3. **Pharmacy Networks** (run `generate_pharmacy_networks.py`) - Links to pharmacies 🆕
+3. **Pharmacy Networks** (run `generate_pharmacy_networks.py`) - Links to pharmacies
 4. **Formularies** (run `generate_formularies.py`) - Links to plans
 5. **Drugs** (run `generate_drugs.py`) - Independent, can run anytime
 6. **Members** (run `generate_members.py`)
 7. **Enrollments** (run `generate_enrollments.py`) - Links to members and plans
+8. **Claims** (run `generate_claims.py`) - Links to members, pharmacies, drugs, and plans 🆕
 
 **Quick Start:**
 ```bash
@@ -190,6 +246,7 @@ python3 database/scripts/generate_formularies.py
 python3 database/scripts/generate_drugs.py
 python3 database/scripts/generate_members.py
 python3 database/scripts/generate_enrollments.py
+python3 database/scripts/generate_claims.py
 ```
 
 ## Configuration
@@ -259,6 +316,46 @@ SINGLE_ACTIVE = 0.70      # 70%
 DUAL_COVERAGE = 0.15      # 15%
 PLAN_TRANSITION = 0.10    # 10%
 HISTORICAL_ONLY = 0.05    # 5%
+```
+
+### generate_claims.py Configuration
+
+Edit the script to customize:
+
+```python
+# Total claims to generate
+TOTAL_CLAIMS = 10_000_000
+
+# Target file size
+TARGET_FILE_SIZE_MB = 30
+
+# Claim status distribution
+CLAIM_STATUS_DISTRIBUTION = {
+    'APPROVED': 87,      # 87% approved
+    'REJECTED': 10,      # 10% rejected
+    'PENDING': 2,        # 2% pending
+    'REVERSED': 0.5,     # 0.5% reversed
+    'REBILLED': 0.5      # 0.5% rebilled
+}
+
+# Rejection code distribution (for rejected claims)
+REJECTION_CODES = {
+    '70': 25,   # Product Not Covered
+    '75': 30,   # Prior Authorization Required
+    '76': 15,   # Plan Limitations Exceeded
+    '79': 15,   # Refill Too Soon
+    '85': 10,   # Patient Not Covered
+    '88': 5     # DUR Reject
+}
+
+# Days supply distribution
+DAYS_SUPPLY_DISTRIBUTION = {
+    30: 60,   # 60% are 30-day supplies
+    60: 15,   # 15% are 60-day supplies
+    90: 20,   # 20% are 90-day supplies
+    7: 3,     # 3% are 7-day supplies
+    14: 2     # 2% are 14-day supplies
+}
 ```
 
 ## Output Location
