@@ -9,7 +9,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +21,7 @@ import dejanlazic.playground.inmemory.rdbms.model.Pharmacy.PharmacyType;
  * Data Access Object for Pharmacy entity
  * Provides CRUD operations for pharmacies with performance metrics
  */
-public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
+public class PharmacyDAO implements BaseDAO<Pharmacy, Long> {
     
     private static final Logger LOGGER = Logger.getLogger(PharmacyDAO.class.getName());
     
@@ -103,7 +102,7 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    pharmacy.setPharmacyId((UUID) rs.getObject(1));
+                    pharmacy.setPharmacyId(rs.getLong(1));
                     metrics.setRecordCount(1);
                     metrics.setRecordSizeBytes(estimatePharmacySize(pharmacy));
                     LOGGER.log(Level.INFO, "Inserted pharmacy: {0}", pharmacy.getPharmacyName());
@@ -171,13 +170,13 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
     }
     
     @Override
-    public Optional<Pharmacy> findById(UUID id) throws SQLException {
+    public Optional<Pharmacy> findById(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Pharmacy", "SELECT_BY_ID");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_ID_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -349,7 +348,7 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
              PreparedStatement ps = conn.prepareStatement(UPDATE_SQL)) {
             
             setPharmacyParameters(ps, pharmacy);
-            ps.setObject(11, pharmacy.getPharmacyId());
+            ps.setLong(11, pharmacy.getPharmacyId());
             
             int rowsAffected = ps.executeUpdate();
             boolean updated = rowsAffected > 0;
@@ -367,13 +366,13 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
     }
     
     @Override
-    public boolean delete(UUID id) throws SQLException {
+    public boolean delete(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Pharmacy", "DELETE");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(DELETE_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             int rowsAffected = ps.executeUpdate();
             boolean deleted = rowsAffected > 0;
             
@@ -409,13 +408,13 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
     }
     
     @Override
-    public boolean exists(UUID id) throws SQLException {
+    public boolean exists(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Pharmacy", "EXISTS");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(EXISTS_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 boolean exists = rs.next() && rs.getBoolean(1);
@@ -450,8 +449,8 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
     private long estimatePharmacySize(Pharmacy pharmacy) {
         long size = 0;
         
-        // UUID (16 bytes)
-        size += 16;
+        // Long (8 bytes)
+        size += 8;
         
         // Strings (2 bytes per character for UTF-16)
         if (pharmacy.getNcpdpId() != null) size += pharmacy.getNcpdpId().length() * 2L;
@@ -482,7 +481,7 @@ public class PharmacyDAO implements BaseDAO<Pharmacy, UUID> {
     private Pharmacy mapResultSetToPharmacy(ResultSet rs) throws SQLException {
         Pharmacy pharmacy = new Pharmacy();
         
-        pharmacy.setPharmacyId((UUID) rs.getObject("pharmacy_id"));
+        pharmacy.setPharmacyId(rs.getLong("pharmacy_id"));
         pharmacy.setNcpdpId(rs.getString("ncpdp_id"));
         pharmacy.setPharmacyName(rs.getString("pharmacy_name"));
         pharmacy.setNpi(rs.getString("npi"));

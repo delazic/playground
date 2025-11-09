@@ -10,7 +10,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,7 +25,7 @@ import dejanlazic.playground.inmemory.rdbms.model.PharmacyNetwork.NetworkType;
  * Data Access Object for PharmacyNetwork entity
  * Provides CRUD operations for pharmacy network assignments with performance metrics
  */
-public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
+public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, Long> {
     
     private static final Logger LOGGER = Logger.getLogger(PharmacyNetworkDAO.class.getName());
     
@@ -132,7 +131,7 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    network.setNetworkId((UUID) rs.getObject(1));
+                    network.setNetworkId(rs.getLong(1));
                     metrics.setRecordCount(1);
                     metrics.setRecordSizeBytes(estimatePharmacyNetworkSize(network));
                     LOGGER.log(Level.INFO, "Inserted pharmacy network: {0}", network.getNetworkName());
@@ -200,13 +199,13 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
     }
     
     @Override
-    public Optional<PharmacyNetwork> findById(UUID id) throws SQLException {
+    public Optional<PharmacyNetwork> findById(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("PharmacyNetwork", "SELECT_BY_ID");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_ID_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -229,14 +228,14 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
      * @return List of pharmacy networks for the pharmacy
      * @throws SQLException if database error occurs
      */
-    public List<PharmacyNetwork> findByPharmacyId(UUID pharmacyId) throws SQLException {
+    public List<PharmacyNetwork> findByPharmacyId(Long pharmacyId) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("PharmacyNetwork", "SELECT_BY_PHARMACY");
         List<PharmacyNetwork> networks = new ArrayList<>();
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_PHARMACY_SQL)) {
             
-            ps.setObject(1, pharmacyId);
+            ps.setLong(1, pharmacyId);
             
             try (ResultSet rs = ps.executeQuery()) {
                 long totalSize = 0;
@@ -381,7 +380,7 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
              PreparedStatement ps = conn.prepareStatement(UPDATE_SQL)) {
             
             setPharmacyNetworkParameters(ps, network);
-            ps.setObject(14, network.getNetworkId());
+            ps.setLong(14, network.getNetworkId());
             
             int rowsAffected = ps.executeUpdate();
             boolean updated = rowsAffected > 0;
@@ -399,13 +398,13 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
     }
     
     @Override
-    public boolean delete(UUID id) throws SQLException {
+    public boolean delete(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("PharmacyNetwork", "DELETE");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(DELETE_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             int rowsAffected = ps.executeUpdate();
             boolean deleted = rowsAffected > 0;
             
@@ -441,13 +440,13 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
     }
     
     @Override
-    public boolean exists(UUID id) throws SQLException {
+    public boolean exists(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("PharmacyNetwork", "EXISTS");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(EXISTS_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 boolean exists = rs.next() && rs.getBoolean(1);
@@ -486,8 +485,8 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
     private long estimatePharmacyNetworkSize(PharmacyNetwork network) {
         long size = 0;
         
-        // UUIDs (16 bytes each)
-        size += 32; // network_id + pharmacy_id
+        // Longs (8 bytes each)
+        size += 16; // network_id + pharmacy_id
         
         // Strings (2 bytes per character for UTF-16)
         if (network.getNetworkName() != null) size += network.getNetworkName().length() * 2L;
@@ -519,8 +518,8 @@ public class PharmacyNetworkDAO implements BaseDAO<PharmacyNetwork, UUID> {
     private PharmacyNetwork mapResultSetToPharmacyNetwork(ResultSet rs) throws SQLException {
         PharmacyNetwork network = new PharmacyNetwork();
         
-        network.setNetworkId((UUID) rs.getObject("network_id"));
-        network.setPharmacyId((UUID) rs.getObject("pharmacy_id"));
+        network.setNetworkId(rs.getLong("network_id"));
+        network.setPharmacyId(rs.getLong("pharmacy_id"));
         network.setNetworkName(rs.getString("network_name"));
         
         String typeStr = rs.getString("network_type");

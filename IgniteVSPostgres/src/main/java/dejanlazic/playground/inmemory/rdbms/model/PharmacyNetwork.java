@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * POJO representing a pharmacy network assignment
@@ -44,8 +43,8 @@ public class PharmacyNetwork {
         PENDING           // Pending activation
     }
     
-    private UUID networkId;
-    private UUID pharmacyId;
+    private Long networkId;
+    private Long pharmacyId;
     private String ncpdpId;  // Business key for pharmacy lookup
     private String networkName;
     private NetworkType networkType;
@@ -66,7 +65,7 @@ public class PharmacyNetwork {
     public PharmacyNetwork() {
     }
     
-    public PharmacyNetwork(UUID pharmacyId, String networkName, NetworkType networkType) {
+    public PharmacyNetwork(Long pharmacyId, String networkName, NetworkType networkType) {
         this.pharmacyId = pharmacyId;
         this.networkName = networkName;
         this.networkType = networkType;
@@ -79,19 +78,19 @@ public class PharmacyNetwork {
     }
     
     // Getters and Setters
-    public UUID getNetworkId() {
+    public Long getNetworkId() {
         return networkId;
     }
     
-    public void setNetworkId(UUID networkId) {
+    public void setNetworkId(Long networkId) {
         this.networkId = networkId;
     }
     
-    public UUID getPharmacyId() {
+    public Long getPharmacyId() {
         return pharmacyId;
     }
     
-    public void setPharmacyId(UUID pharmacyId) {
+    public void setPharmacyId(Long pharmacyId) {
         this.pharmacyId = pharmacyId;
     }
     

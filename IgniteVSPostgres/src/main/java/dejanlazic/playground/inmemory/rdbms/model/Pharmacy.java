@@ -2,7 +2,6 @@ package dejanlazic.playground.inmemory.rdbms.model;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * POJO representing a pharmacy
@@ -18,7 +17,7 @@ public class Pharmacy {
         LONG_TERM_CARE
     }
     
-    private UUID pharmacyId;
+    private Long pharmacyId;
     private String ncpdpId;
     private String pharmacyName;
     private String npi;
@@ -45,11 +44,11 @@ public class Pharmacy {
     }
     
     // Getters and Setters
-    public UUID getPharmacyId() {
+    public Long getPharmacyId() {
         return pharmacyId;
     }
     
-    public void setPharmacyId(UUID pharmacyId) {
+    public void setPharmacyId(Long pharmacyId) {
         this.pharmacyId = pharmacyId;
     }
     

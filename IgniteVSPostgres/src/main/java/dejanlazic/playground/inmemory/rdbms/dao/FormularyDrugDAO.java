@@ -9,7 +9,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,15 +19,15 @@ import dejanlazic.playground.inmemory.rdbms.model.FormularyDrug;
 /**
  * Data Access Object for FormularyDrug entity
  * Provides CRUD operations for formulary-drug relationships with performance metrics
- * 
+ *
  * IMPORTANT: This table has foreign keys to both formulary and drug tables
  * - formulary_id references formulary(formulary_id)
  * - drug_id references drug(drug_id)
- * 
+ *
  * The INSERT operation uses JOINs to resolve business keys (formulary_code, ndc_code)
- * to their respective UUIDs, similar to how EnrollmentDAO and FormularyDAO work.
+ * to their respective IDs, similar to how EnrollmentDAO and FormularyDAO work.
  */
-public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
+public class FormularyDrugDAO implements BaseDAO<FormularyDrug, Long> {
     
     private static final Logger LOGGER = Logger.getLogger(FormularyDrugDAO.class.getName());
     
@@ -138,7 +137,7 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    formularyDrug.setFormularyDrugId((UUID) rs.getObject(1));
+                    formularyDrug.setFormularyDrugId(rs.getLong(1));
                     metrics.setRecordCount(1);
                     metrics.setRecordSizeBytes(estimateFormularyDrugSize(formularyDrug));
                     LOGGER.log(Level.INFO, "Inserted formulary-drug relationship");
@@ -206,13 +205,13 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
     }
     
     @Override
-    public Optional<FormularyDrug> findById(UUID id) throws SQLException {
+    public Optional<FormularyDrug> findById(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("FormularyDrug", "SELECT_BY_ID");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_ID_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -235,14 +234,14 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
      * @return List of formulary-drug relationships
      * @throws SQLException if database error occurs
      */
-    public List<FormularyDrug> findByFormularyId(UUID formularyId) throws SQLException {
+    public List<FormularyDrug> findByFormularyId(Long formularyId) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("FormularyDrug", "SELECT_BY_FORMULARY_ID");
         List<FormularyDrug> formularyDrugs = new ArrayList<>();
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_FORMULARY_ID_SQL)) {
             
-            ps.setObject(1, formularyId);
+            ps.setLong(1, formularyId);
             
             try (ResultSet rs = ps.executeQuery()) {
                 long totalSize = 0;
@@ -267,14 +266,14 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
      * @return List of formulary-drug relationships
      * @throws SQLException if database error occurs
      */
-    public List<FormularyDrug> findByDrugId(UUID drugId) throws SQLException {
+    public List<FormularyDrug> findByDrugId(Long drugId) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("FormularyDrug", "SELECT_BY_DRUG_ID");
         List<FormularyDrug> formularyDrugs = new ArrayList<>();
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_DRUG_ID_SQL)) {
             
-            ps.setObject(1, drugId);
+            ps.setLong(1, drugId);
             
             try (ResultSet rs = ps.executeQuery()) {
                 long totalSize = 0;
@@ -415,15 +414,15 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
              PreparedStatement ps = conn.prepareStatement(UPDATE_SQL)) {
             
             int idx = 1;
-            ps.setObject(idx++, formularyDrug.getFormularyId());
-            ps.setObject(idx++, formularyDrug.getDrugId());
+            ps.setLong(idx++, formularyDrug.getFormularyId());
+            ps.setLong(idx++, formularyDrug.getDrugId());
             ps.setInt(idx++, formularyDrug.getTier());
             ps.setString(idx++, formularyDrug.getStatus());
             ps.setBoolean(idx++, formularyDrug.isRequiresPriorAuth());
             ps.setBoolean(idx++, formularyDrug.isRequiresStepTherapy());
             ps.setObject(idx++, formularyDrug.getQuantityLimit());
             ps.setObject(idx++, formularyDrug.getDaysSupplyLimit());
-            ps.setObject(idx++, formularyDrug.getFormularyDrugId());
+            ps.setLong(idx++, formularyDrug.getFormularyDrugId());
             
             int rowsAffected = ps.executeUpdate();
             boolean updated = rowsAffected > 0;
@@ -441,13 +440,13 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
     }
     
     @Override
-    public boolean delete(UUID id) throws SQLException {
+    public boolean delete(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("FormularyDrug", "DELETE");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(DELETE_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             int rowsAffected = ps.executeUpdate();
             boolean deleted = rowsAffected > 0;
             
@@ -483,13 +482,13 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
     }
     
     @Override
-    public boolean exists(UUID id) throws SQLException {
+    public boolean exists(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("FormularyDrug", "EXISTS");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(EXISTS_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 boolean exists = rs.next() && rs.getBoolean(1);
@@ -523,10 +522,10 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
     private long estimateFormularyDrugSize(FormularyDrug formularyDrug) {
         long size = 0;
         
-        // UUIDs (16 bytes each)
-        size += 16; // formulary_drug_id
-        if (formularyDrug.getFormularyId() != null) size += 16;
-        if (formularyDrug.getDrugId() != null) size += 16;
+        // Longs (8 bytes each)
+        size += 8; // formulary_drug_id
+        if (formularyDrug.getFormularyId() != null) size += 8;
+        if (formularyDrug.getDrugId() != null) size += 8;
         
         // Integers (4 bytes each)
         size += 4; // tier
@@ -554,9 +553,9 @@ public class FormularyDrugDAO implements BaseDAO<FormularyDrug, UUID> {
     private FormularyDrug mapResultSetToFormularyDrug(ResultSet rs) throws SQLException {
         FormularyDrug formularyDrug = new FormularyDrug();
         
-        formularyDrug.setFormularyDrugId((UUID) rs.getObject("formulary_drug_id"));
-        formularyDrug.setFormularyId((UUID) rs.getObject("formulary_id"));
-        formularyDrug.setDrugId((UUID) rs.getObject("drug_id"));
+        formularyDrug.setFormularyDrugId(rs.getLong("formulary_drug_id"));
+        formularyDrug.setFormularyId(rs.getLong("formulary_id"));
+        formularyDrug.setDrugId(rs.getLong("drug_id"));
         formularyDrug.setTier(rs.getInt("tier"));
         formularyDrug.setStatus(rs.getString("status"));
         formularyDrug.setRequiresPriorAuth(rs.getBoolean("requires_prior_auth"));

@@ -3,7 +3,6 @@ package dejanlazic.playground.inmemory.rdbms.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * POJO representing a drug product
@@ -11,7 +10,7 @@ import java.util.UUID;
  */
 public class Drug {
     
-    private UUID drugId;
+    private Long drugId;
     private String ndcCode;
     private String drugName;
     private String genericName;
@@ -48,11 +47,11 @@ public class Drug {
     }
     
     // Getters and Setters
-    public UUID getDrugId() {
+    public Long getDrugId() {
         return drugId;
     }
     
-    public void setDrugId(UUID drugId) {
+    public void setDrugId(Long drugId) {
         this.drugId = drugId;
     }
     

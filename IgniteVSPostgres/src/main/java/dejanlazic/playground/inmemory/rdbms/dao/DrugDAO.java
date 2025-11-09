@@ -10,7 +10,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,7 +21,7 @@ import dejanlazic.playground.inmemory.rdbms.model.Drug;
  * Data Access Object for Drug entity
  * Provides CRUD operations for drugs with performance metrics
  */
-public class DrugDAO implements BaseDAO<Drug, UUID> {
+public class DrugDAO implements BaseDAO<Drug, Long> {
     
     private static final Logger LOGGER = Logger.getLogger(DrugDAO.class.getName());
     
@@ -88,7 +87,7 @@ public class DrugDAO implements BaseDAO<Drug, UUID> {
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    drug.setDrugId((UUID) rs.getObject(1));
+                    drug.setDrugId(rs.getLong(1));
                     metrics.setRecordCount(1);
                     metrics.setRecordSizeBytes(estimateDrugSize(drug));
                     LOGGER.log(Level.INFO, "Inserted drug: {0}", drug.getNdcCode());
@@ -156,13 +155,13 @@ public class DrugDAO implements BaseDAO<Drug, UUID> {
     }
     
     @Override
-    public Optional<Drug> findById(UUID id) throws SQLException {
+    public Optional<Drug> findById(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Drug", "SELECT_BY_ID");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(FIND_BY_ID_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -269,13 +268,13 @@ public class DrugDAO implements BaseDAO<Drug, UUID> {
     }
     
     @Override
-    public boolean delete(UUID id) throws SQLException {
+    public boolean delete(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Drug", "DELETE");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(DELETE_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             int rowsAffected = ps.executeUpdate();
             boolean deleted = rowsAffected > 0;
             
@@ -311,13 +310,13 @@ public class DrugDAO implements BaseDAO<Drug, UUID> {
     }
     
     @Override
-    public boolean exists(UUID id) throws SQLException {
+    public boolean exists(Long id) throws SQLException {
         PerformanceMetrics metrics = new PerformanceMetrics("Drug", "EXISTS");
         
         try (Connection conn = connector.getConnection();
              PreparedStatement ps = conn.prepareStatement(EXISTS_SQL)) {
             
-            ps.setObject(1, id);
+            ps.setLong(1, id);
             
             try (ResultSet rs = ps.executeQuery()) {
                 boolean exists = rs.next() && rs.getBoolean(1);
@@ -357,8 +356,8 @@ public class DrugDAO implements BaseDAO<Drug, UUID> {
     private long estimateDrugSize(Drug drug) {
         long size = 0;
         
-        // UUID (16 bytes)
-        size += 16;
+        // Long (8 bytes)
+        size += 8;
         
         // Strings (2 bytes per character for UTF-16)
         if (drug.getNdcCode() != null) size += drug.getNdcCode().length() * 2L;
@@ -389,7 +388,7 @@ public class DrugDAO implements BaseDAO<Drug, UUID> {
     private Drug mapResultSetToDrug(ResultSet rs) throws SQLException {
         Drug drug = new Drug();
         
-        drug.setDrugId((UUID) rs.getObject("drug_id"));
+        drug.setDrugId(rs.getLong("drug_id"));
         drug.setNdcCode(rs.getString("ndc_code"));
         drug.setDrugName(rs.getString("drug_name"));
         drug.setGenericName(rs.getString("generic_name"));
