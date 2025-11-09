@@ -38,10 +38,45 @@ services:
     depends_on:
       - postgres
 
+  ignite:
+    image: apacheignite/ignite:2.16.0
+    container_name: pbm-ignite
+    environment:
+      IGNITE_QUIET: "false"
+      JVM_OPTS: "-Xms1g -Xmx2g -server -XX:+UseG1GC -XX:MaxMetaspaceSize=256m"
+      OPTION_LIBS: "ignite-rest-http"
+    ports:
+      - "10800:10800"  # Thin client port
+      - "47100:47100"  # Communication SPI port
+      - "47500:47500"  # Discovery SPI port
+      - "8080:8080"    # REST API port
+      - "11211:11211"  # Memcached port (optional)
+    volumes:
+      - ignite_data:/persistence
+      - ./ignite/config:/config
+    networks:
+      - pbm-network
+    command: >
+      /bin/bash -c "
+      if [ -f /config/ignite-config.xml ]; then
+        /opt/ignite/apache-ignite/bin/ignite.sh /config/ignite-config.xml
+      else
+        /opt/ignite/apache-ignite/bin/ignite.sh
+      fi
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ignite?cmd=version"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
 volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  ignite_data:
     driver: local
 
 networks:

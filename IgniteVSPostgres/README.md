@@ -1975,11 +1975,50 @@ For complete documentation, see [CLAIM_SIMULATION_README.md](./CLAIM_SIMULATION_
 
 ---
 
-## Apache Ignite vs PostgreSQL Performance Comparison
+## Apache Ignite vs PostgreSQL Performance Comparison 🆕
 
-This project also includes performance benchmarking between Apache Ignite (in-memory data grid) and PostgreSQL for PBM workloads. See the [IgniteVSPostgres](./IgniteVSPostgres/) directory for implementation details.
+This project now includes **Apache Ignite** as an in-memory data grid for performance comparison with PostgreSQL. Ignite runs alongside PostgreSQL in Docker, allowing you to test and benchmark both systems.
 
-#### Use Cases for Each Technology
+### Quick Start with Ignite
+
+```bash
+# Start all services (PostgreSQL + Ignite + pgAdmin)
+docker-compose up -d
+
+# Verify Ignite is running
+curl http://localhost:8080/ignite?cmd=version
+
+# View Ignite logs
+docker logs pbm-ignite
+```
+
+### Ignite Access Points
+
+- **Thin Client**: `localhost:10800` (Java/JDBC connections)
+- **REST API**: `http://localhost:8080` (HTTP interface)
+- **Communication**: `localhost:47100` (node-to-node)
+- **Discovery**: `localhost:47500` (cluster discovery)
+
+### Pre-configured Caches
+
+The system includes pre-configured caches optimized for PBM workloads:
+
+| Cache Name           | Mode        | Use Case                    |
+|---------------------|-------------|------------------------------|
+| MembersCache        | PARTITIONED | Member records               |
+| EnrollmentsCache    | PARTITIONED | Enrollment data              |
+| DrugsCache          | REPLICATED  | Drug catalog (reference)     |
+| FormulariesCache    | REPLICATED  | Formulary definitions        |
+| FormularyDrugsCache | PARTITIONED | Formulary-drug relationships |
+| PharmaciesCache     | REPLICATED  | Pharmacy directory           |
+| ClaimsCache         | PARTITIONED | Claims transactions          |
+
+### Complete Documentation
+
+For detailed setup, configuration, and usage instructions, see:
+📖 **[ignite/IGNITE_SETUP.md](./ignite/IGNITE_SETUP.md)**
+
+### Use Cases for Each Technology
 
 **Apache Ignite**:
 - Real-time claims adjudication (sub-100ms response)
@@ -1987,6 +2026,7 @@ This project also includes performance benchmarking between Apache Ignite (in-me
 - Formulary lookups during claim processing
 - Session state management
 - Distributed computing for analytics
+- In-memory SQL queries
 
 **PostgreSQL**:
 - Persistent storage for all entities
@@ -1994,12 +2034,14 @@ This project also includes performance benchmarking between Apache Ignite (in-me
 - Historical data analysis
 - Audit trail storage
 - Batch processing jobs
+- ACID transactions
 
 **Hybrid Approach** (Recommended):
 - PostgreSQL as system of record
 - Ignite for hot data caching and real-time processing
 - Write-through cache pattern for consistency
 - Periodic cache refresh from PostgreSQL
+- Best of both worlds: durability + speed
 
 
 ## Appendix

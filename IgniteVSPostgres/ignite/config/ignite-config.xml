@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="ignite.cfg" class="org.apache.ignite.configuration.IgniteConfiguration">
+        
+        <!-- Cluster name -->
+        <property name="igniteInstanceName" value="pbm-ignite-cluster"/>
+        
+        <!-- Enable peer class loading for dynamic deployment -->
+        <property name="peerClassLoadingEnabled" value="true"/>
+        
+        <!-- Work directory -->
+        <property name="workDirectory" value="/persistence/work"/>
+        
+        <!-- Data storage configuration with persistence -->
+        <property name="dataStorageConfiguration">
+            <bean class="org.apache.ignite.configuration.DataStorageConfiguration">
+                <!-- Enable native persistence for database-like durability -->
+                <property name="defaultDataRegionConfiguration">
+                    <bean class="org.apache.ignite.configuration.DataRegionConfiguration">
+                        <property name="name" value="Default_Region"/>
+                        <!-- 1GB initial size, 4GB max size for standalone database -->
+                        <property name="initialSize" value="#{1L * 1024 * 1024 * 1024}"/>
+                        <property name="maxSize" value="#{4L * 1024 * 1024 * 1024}"/>
+                        <!-- Enable persistence - critical for database replacement -->
+                        <property name="persistenceEnabled" value="true"/>
+                        <!-- Enable metrics -->
+                        <property name="metricsEnabled" value="true"/>
+                        <!-- Enable page replacement for large datasets -->
+                        <property name="pageEvictionMode" value="RANDOM_2_LRU"/>
+                    </bean>
+                </property>
+                
+                <!-- WAL configuration for ACID compliance -->
+                <property name="walMode" value="FSYNC"/> <!-- Strongest durability -->
+                <property name="walPath" value="/persistence/wal"/>
+                <property name="walArchivePath" value="/persistence/wal/archive"/>
+                <property name="walSegmentSize" value="#{64 * 1024 * 1024}"/> <!-- 64MB segments -->
+                
+                <!-- Checkpoint configuration -->
+                <property name="checkpointFrequency" value="180000"/> <!-- 3 minutes -->
+                <property name="checkpointThreads" value="4"/>
+            </bean>
+        </property>
+        
+        <!-- Discovery SPI configuration -->
+        <property name="discoverySpi">
+            <bean class="org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi">
+                <property name="ipFinder">
+                    <bean class="org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder">
+                        <property name="addresses">
+                            <list>
+                                <!-- Single node for testing -->
+                                <value>127.0.0.1:47500..47509</value>
+                            </list>
+                        </property>
+                    </bean>
+                </property>
+                <property name="socketTimeout" value="5000"/>
+                <property name="networkTimeout" value="5000"/>
+            </bean>
+        </property>
+        
+        <!-- Communication SPI configuration -->
+        <property name="communicationSpi">
+            <bean class="org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi">
+                <property name="localPort" value="47100"/>
+                <property name="socketWriteTimeout" value="5000"/>
+            </bean>
+        </property>
+        
+        <!-- Client connector configuration -->
+        <property name="clientConnectorConfiguration">
+            <bean class="org.apache.ignite.configuration.ClientConnectorConfiguration">
+                <property name="port" value="10800"/>
+                <property name="portRange" value="10"/>
+            </bean>
+        </property>
+        
+        <!-- SQL Table configurations for PBM entities -->
+        <!-- Using SQL tables instead of simple caches for full database functionality -->
+        <property name="cacheConfiguration">
+            <list>
+                <!-- MEMBER table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_MEMBER"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="0"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="writeSynchronizationMode" value="FULL_SYNC"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="MEMBER"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="MEMBER_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.Member"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="MEMBER_ID" value="java.lang.Long"/>
+                                        <entry key="MEMBER_NUMBER" value="java.lang.String"/>
+                                        <entry key="FIRST_NAME" value="java.lang.String"/>
+                                        <entry key="LAST_NAME" value="java.lang.String"/>
+                                        <entry key="DATE_OF_BIRTH" value="java.sql.Date"/>
+                                        <entry key="GENDER" value="java.lang.String"/>
+                                        <entry key="ADDRESS" value="java.lang.String"/>
+                                        <entry key="CITY" value="java.lang.String"/>
+                                        <entry key="STATE" value="java.lang.String"/>
+                                        <entry key="ZIP_CODE" value="java.lang.String"/>
+                                        <entry key="PHONE" value="java.lang.String"/>
+                                        <entry key="EMAIL" value="java.lang.String"/>
+                                        <entry key="CREATED_AT" value="java.sql.Timestamp"/>
+                                        <entry key="UPDATED_AT" value="java.sql.Timestamp"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="MEMBER_NUMBER"/>
+                                            <property name="indexType" value="SORTED"/>
+                                        </bean>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg>
+                                                <list>
+                                                    <value>LAST_NAME</value>
+                                                    <value>FIRST_NAME</value>
+                                                </list>
+                                            </constructor-arg>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                
+                <!-- PLAN table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_PLAN"/>
+                    <property name="cacheMode" value="REPLICATED"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="PLAN"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="PLAN_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.Plan"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="PLAN_ID" value="java.lang.Long"/>
+                                        <entry key="PLAN_CODE" value="java.lang.String"/>
+                                        <entry key="PLAN_NAME" value="java.lang.String"/>
+                                        <entry key="PLAN_TYPE" value="java.lang.String"/>
+                                        <entry key="EFFECTIVE_DATE" value="java.sql.Date"/>
+                                        <entry key="TERMINATION_DATE" value="java.sql.Date"/>
+                                        <entry key="IS_ACTIVE" value="java.lang.Boolean"/>
+                                        <entry key="CREATED_AT" value="java.sql.Timestamp"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="PLAN_CODE"/>
+                                            <property name="indexType" value="SORTED"/>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                
+                <!-- DRUG table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_DRUG"/>
+                    <property name="cacheMode" value="REPLICATED"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="DRUG"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="DRUG_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.Drug"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="DRUG_ID" value="java.lang.Long"/>
+                                        <entry key="NDC_CODE" value="java.lang.String"/>
+                                        <entry key="DRUG_NAME" value="java.lang.String"/>
+                                        <entry key="GENERIC_NAME" value="java.lang.String"/>
+                                        <entry key="STRENGTH" value="java.lang.String"/>
+                                        <entry key="DOSAGE_FORM" value="java.lang.String"/>
+                                        <entry key="MANUFACTURER" value="java.lang.String"/>
+                                        <entry key="DRUG_CLASS" value="java.lang.String"/>
+                                        <entry key="IS_GENERIC" value="java.lang.Boolean"/>
+                                        <entry key="IS_BRAND" value="java.lang.Boolean"/>
+                                        <entry key="AWP_PRICE" value="java.math.BigDecimal"/>
+                                        <entry key="MAC_PRICE" value="java.math.BigDecimal"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="NDC_CODE"/>
+                                            <property name="indexType" value="SORTED"/>
+                                        </bean>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="DRUG_NAME"/>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                
+                <!-- PHARMACY table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_PHARMACY"/>
+                    <property name="cacheMode" value="REPLICATED"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="PHARMACY"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="PHARMACY_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.Pharmacy"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="PHARMACY_ID" value="java.lang.Long"/>
+                                        <entry key="NCPDP_ID" value="java.lang.String"/>
+                                        <entry key="PHARMACY_NAME" value="java.lang.String"/>
+                                        <entry key="NPI" value="java.lang.String"/>
+                                        <entry key="ADDRESS" value="java.lang.String"/>
+                                        <entry key="CITY" value="java.lang.String"/>
+                                        <entry key="STATE" value="java.lang.String"/>
+                                        <entry key="ZIP_CODE" value="java.lang.String"/>
+                                        <entry key="PHONE" value="java.lang.String"/>
+                                        <entry key="PHARMACY_TYPE" value="java.lang.String"/>
+                                        <entry key="IS_ACTIVE" value="java.lang.Boolean"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="NCPDP_ID"/>
+                                            <property name="indexType" value="SORTED"/>
+                                        </bean>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="ZIP_CODE"/>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                
+                <!-- ENROLLMENT table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_ENROLLMENT"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="0"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="ENROLLMENT"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="ENROLLMENT_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.Enrollment"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="ENROLLMENT_ID" value="java.lang.Long"/>
+                                        <entry key="MEMBER_ID" value="java.lang.Long"/>
+                                        <entry key="PLAN_ID" value="java.lang.Long"/>
+                                        <entry key="GROUP_NUMBER" value="java.lang.String"/>
+                                        <entry key="EFFECTIVE_DATE" value="java.sql.Date"/>
+                                        <entry key="TERMINATION_DATE" value="java.sql.Date"/>
+                                        <entry key="RELATIONSHIP" value="java.lang.String"/>
+                                        <entry key="IS_ACTIVE" value="java.lang.Boolean"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="MEMBER_ID"/>
+                                        </bean>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="PLAN_ID"/>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                
+                <!-- FORMULARY table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_FORMULARY"/>
+                    <property name="cacheMode" value="REPLICATED"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="FORMULARY"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="FORMULARY_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.Formulary"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="FORMULARY_ID" value="java.lang.Long"/>
+                                        <entry key="PLAN_ID" value="java.lang.Long"/>
+                                        <entry key="FORMULARY_NAME" value="java.lang.String"/>
+                                        <entry key="EFFECTIVE_DATE" value="java.sql.Date"/>
+                                        <entry key="TERMINATION_DATE" value="java.sql.Date"/>
+                                        <entry key="IS_ACTIVE" value="java.lang.Boolean"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="PLAN_ID"/>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                
+                <!-- FORMULARY_DRUG table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_FORMULARY_DRUG"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="0"/>
+                    <property name="atomicityMode" value="ATOMIC"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="FORMULARY_DRUG"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="FORMULARY_DRUG_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.FormularyDrug"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="FORMULARY_DRUG_ID" value="java.lang.Long"/>
+                                        <entry key="FORMULARY_ID" value="java.lang.Long"/>
+                                        <entry key="DRUG_ID" value="java.lang.Long"/>
+                                        <entry key="TIER" value="java.lang.Integer"/>
+                                        <entry key="STATUS" value="java.lang.String"/>
+                                        <entry key="REQUIRES_PRIOR_AUTH" value="java.lang.Boolean"/>
+                                        <entry key="REQUIRES_STEP_THERAPY" value="java.lang.Boolean"/>
+                                        <entry key="QUANTITY_LIMIT" value="java.lang.Integer"/>
+                                        <entry key="DAYS_SUPPLY_LIMIT" value="java.lang.Integer"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg>
+                                                <list>
+                                                    <value>FORMULARY_ID</value>
+                                                    <value>DRUG_ID</value>
+                                                </list>
+                                            </constructor-arg>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+                
+                <!-- CLAIM table -->
+                <bean class="org.apache.ignite.configuration.CacheConfiguration">
+                    <property name="name" value="SQL_PUBLIC_CLAIM"/>
+                    <property name="cacheMode" value="PARTITIONED"/>
+                    <property name="backups" value="0"/>
+                    <property name="atomicityMode" value="TRANSACTIONAL"/>
+                    <property name="writeSynchronizationMode" value="FULL_SYNC"/>
+                    <property name="sqlSchema" value="PUBLIC"/>
+                    <property name="queryEntities">
+                        <list>
+                            <bean class="org.apache.ignite.cache.QueryEntity">
+                                <property name="tableName" value="CLAIM"/>
+                                <property name="keyType" value="java.lang.Long"/>
+                                <property name="keyFieldName" value="CLAIM_ID"/>
+                                <property name="valueType" value="dejanlazic.playground.inmemory.ignite.model.Claim"/>
+                                <property name="fields">
+                                    <map>
+                                        <entry key="CLAIM_ID" value="java.lang.Long"/>
+                                        <entry key="CLAIM_NUMBER" value="java.lang.String"/>
+                                        <entry key="MEMBER_ID" value="java.lang.Long"/>
+                                        <entry key="PHARMACY_ID" value="java.lang.Long"/>
+                                        <entry key="DRUG_ID" value="java.lang.Long"/>
+                                        <entry key="PLAN_ID" value="java.lang.Long"/>
+                                        <entry key="SERVICE_DATE" value="java.sql.Date"/>
+                                        <entry key="FILL_DATE" value="java.sql.Date"/>
+                                        <entry key="QUANTITY_DISPENSED" value="java.lang.Integer"/>
+                                        <entry key="DAYS_SUPPLY" value="java.lang.Integer"/>
+                                        <entry key="INGREDIENT_COST" value="java.math.BigDecimal"/>
+                                        <entry key="DISPENSING_FEE" value="java.math.BigDecimal"/>
+                                        <entry key="TOTAL_COST" value="java.math.BigDecimal"/>
+                                        <entry key="PATIENT_PAY" value="java.math.BigDecimal"/>
+                                        <entry key="PLAN_PAY" value="java.math.BigDecimal"/>
+                                        <entry key="CLAIM_STATUS" value="java.lang.String"/>
+                                        <entry key="REJECTION_CODE" value="java.lang.String"/>
+                                        <entry key="SUBMITTED_AT" value="java.sql.Timestamp"/>
+                                        <entry key="PROCESSED_AT" value="java.sql.Timestamp"/>
+                                    </map>
+                                </property>
+                                <property name="indexes">
+                                    <list>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="CLAIM_NUMBER"/>
+                                            <property name="indexType" value="SORTED"/>
+                                        </bean>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="MEMBER_ID"/>
+                                        </bean>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="SERVICE_DATE"/>
+                                        </bean>
+                                        <bean class="org.apache.ignite.cache.QueryIndex">
+                                            <constructor-arg value="CLAIM_STATUS"/>
+                                        </bean>
+                                    </list>
+                                </property>
+                            </bean>
+                        </list>
+                    </property>
+                </bean>
+            </list>
+        </property>
+        
+        <!-- SQL connector configuration -->
+        <property name="sqlConfiguration">
+            <bean class="org.apache.ignite.configuration.SqlConfiguration">
+                <property name="sqlSchemas">
+                    <list>
+                        <value>PUBLIC</value>
+                    </list>
+                </property>
+            </bean>
+        </property>
+        
+    </bean>
+</beans>
+
+<!-- Made with Bob -->
