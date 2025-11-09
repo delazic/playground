@@ -2,6 +2,8 @@ package dejanlazic.playground.inmemory.rdbms;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.ClaimDAO;
@@ -34,6 +36,7 @@ import dejanlazic.playground.inmemory.rdbms.service.ClaimSimulationService;
  *   4. Claims CSV file must be generated (run generate_1m_claims.py)
  */
 public class ClaimSimulationApp {
+    private static final Logger LOGGER = Logger.getLogger(ClaimSimulationApp.class.getName());
     
     public static void main(String[] args) {
         // Parse speed multiplier from command line
@@ -114,6 +117,7 @@ public class ClaimSimulationApp {
             System.out.println("✓ Simulation completed successfully!");
             
         } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Error loading claims data", e);
             System.err.println("❌ Error loading claims data: " + e.getMessage());
             System.err.println();
             System.err.println("Please ensure the claims CSV files exist:");
@@ -126,10 +130,12 @@ public class ClaimSimulationApp {
             System.err.println("  python3 generate_1m_claims.py");
             System.exit(1);
         } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Database error during simulation", e);
             System.err.println("❌ Database error: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Unexpected error during simulation", e);
             System.err.println("❌ Unexpected error: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
@@ -174,6 +180,7 @@ public class ClaimSimulationApp {
             System.out.println();
             return true;
         } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, "Failed to get database info", e);
             System.err.println("✗ Failed to get database info: " + e.getMessage());
             return false;
         }
@@ -215,6 +222,7 @@ public class ClaimSimulationApp {
             return true;
             
         } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error verifying reference data", e);
             System.err.println("✗ Error verifying reference data: " + e.getMessage());
             return false;
         }

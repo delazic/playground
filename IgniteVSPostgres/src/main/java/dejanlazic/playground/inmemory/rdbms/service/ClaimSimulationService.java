@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.converter.ClaimConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.ClaimDAO;
@@ -20,6 +22,7 @@ import dejanlazic.playground.inmemory.rdbms.service.ClaimAdjudicationService.Cla
  * Processes 1 million claims over a simulated day with realistic throughput patterns.
  */
 public class ClaimSimulationService {
+    private static final Logger LOGGER = Logger.getLogger(ClaimSimulationService.class.getName());
     
     private final ClaimAdjudicationService adjudicationService;
     private final ClaimDAO claimDAO;
@@ -70,9 +73,11 @@ public class ClaimSimulationService {
             // Step 1: Load claims from CSV
             System.out.println("Step 1: Loading claims from CSV...");
             long loadStart = System.currentTimeMillis();
+            LOGGER.info("Loading claims from CSV files");
             allClaims = claimConverter.loadAllClaims();
             long loadTime = System.currentTimeMillis() - loadStart;
-            System.out.println("✓ Loaded " + String.format("%,d", allClaims.size()) + 
+            LOGGER.info("Loaded " + allClaims.size() + " claims in " + (loadTime / 1000.0) + " seconds");
+            System.out.println("✓ Loaded " + String.format("%,d", allClaims.size()) +
                 " claims in " + (loadTime / 1000.0) + " seconds");
             System.out.println();
             
@@ -81,7 +86,9 @@ public class ClaimSimulationService {
             System.out.println("Simulating realistic PBM throughput patterns");
             System.out.println();
             
+            LOGGER.info("Starting claim processing with speed multiplier: " + speedMultiplier);
             processClaimsWithThroughput(speedMultiplier);
+            LOGGER.info("Completed claim processing");
             
             // Step 3: Display final statistics
             displayFinalStatistics();
@@ -131,6 +138,7 @@ public class ClaimSimulationService {
                 try {
                     Thread.sleep(batchDelayMs);
                 } catch (InterruptedException e) {
+                    LOGGER.log(Level.WARNING, "Simulation interrupted", e);
                     Thread.currentThread().interrupt();
                     break;
                 }
@@ -173,7 +181,12 @@ public class ClaimSimulationService {
         
         // Save batch to database
         if (!adjudicatedClaims.isEmpty()) {
-            claimDAO.insertBatch(adjudicatedClaims);
+            try {
+                claimDAO.insertBatch(adjudicatedClaims);
+            } catch (SQLException e) {
+                LOGGER.log(Level.SEVERE, "Failed to insert batch of " + adjudicatedClaims.size() + " claims", e);
+                throw e;
+            }
         }
     }
     
@@ -254,6 +267,7 @@ public class ClaimSimulationService {
             System.out.println("  Approved in DB: " + String.format("%,d", approvedCount));
             System.out.println("  Rejected in DB: " + String.format("%,d", rejectedCount));
         } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, "Error querying database for final statistics", e);
             System.out.println("  Error querying database: " + e.getMessage());
         }
         System.out.println("=".repeat(60));

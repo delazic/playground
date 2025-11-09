@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.DrugDAO;
@@ -27,6 +29,7 @@ import dejanlazic.playground.inmemory.rdbms.model.Member;
  * Simulates PBM claim processing following NCPDP standards.
  */
 public class ClaimAdjudicationService {
+    private static final Logger LOGGER = Logger.getLogger(ClaimAdjudicationService.class.getName());
     
     private final MemberDAO memberDAO;
     private final EnrollmentDAO enrollmentDAO;
@@ -161,6 +164,7 @@ public class ClaimAdjudicationService {
             return new ClaimResponse(claim, true, pricing);
             
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error adjudicating claim: " + claim.getClaimNumber(), e);
             return rejectClaim(claim, "99", "Host Processing Error: " + e.getMessage(), startTime);
         }
     }
@@ -204,6 +208,7 @@ public class ClaimAdjudicationService {
             
             return null;
         } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error checking eligibility for member: " + memberId, e);
             return null;
         }
     }
@@ -217,6 +222,7 @@ public class ClaimAdjudicationService {
             // In real system, you'd lookup actual pharmacy network relationships
             return random.nextInt(100) < 95; // 95% are in network
         } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error checking pharmacy network for pharmacy: " + pharmacyId, e);
             return false;
         }
     }
@@ -241,6 +247,7 @@ public class ClaimAdjudicationService {
             
             return formularyDrug;
         } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error checking formulary for NDC: " + ndc, e);
             return null;
         }
     }
@@ -399,6 +406,7 @@ public class ClaimAdjudicationService {
             int delay = minMs + random.nextInt(maxMs - minMs + 1);
             Thread.sleep(delay);
         } catch (InterruptedException e) {
+            LOGGER.log(Level.FINE, "Processing delay interrupted", e);
             Thread.currentThread().interrupt();
         }
     }
