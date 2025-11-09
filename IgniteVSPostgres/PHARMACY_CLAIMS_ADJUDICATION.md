@@ -526,6 +526,7 @@ Warning:
 - Memory utilization > 85%
 ```
 
+<<<<<<< HEAD
 ## 11. Implemented Claim Simulation System 🆕
 
 ### 11.1 Overview
@@ -720,11 +721,17 @@ For complete documentation, see:
 
 ---
 
+=======
+>>>>>>> 4df88fe55d3c7255016426d7e7ee16d71d4ab2e7
 ## References
 
 1. NCPDP Telecommunication Standard Implementation Guide
 2. NCPDP SCRIPT Standard (for e-prescribing)
 3. CMS Medicare Part D regulations
 4. HIPAA Security and Privacy Rules
+<<<<<<< HEAD
 5. Industry benchmarks from PBM annual reports
 6. **Implemented Claim Simulation System** (see Section 11) 🆕
+=======
+5. Industry benchmarks from PBM annual reports
+>>>>>>> 4df88fe55d3c7255016426d7e7ee16d71d4ab2e7
