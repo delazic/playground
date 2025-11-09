@@ -94,6 +94,17 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
                 status, response_code, response_message,
                 processing_time_ms, deductible_applied, oop_applied
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (claim_number) DO UPDATE SET
+                transaction_type = EXCLUDED.transaction_type,
+                processed_timestamp = EXCLUDED.processed_timestamp,
+                status = EXCLUDED.status,
+                response_code = EXCLUDED.response_code,
+                response_message = EXCLUDED.response_message,
+                processing_time_ms = EXCLUDED.processing_time_ms,
+                patient_pay_amount = EXCLUDED.patient_pay_amount,
+                plan_pay_amount = EXCLUDED.plan_pay_amount,
+                deductible_applied = EXCLUDED.deductible_applied,
+                oop_applied = EXCLUDED.oop_applied
             """;
         
         try (Connection conn = connector.getConnection();
@@ -149,6 +160,17 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
                 status, response_code, response_message,
                 processing_time_ms, deductible_applied, oop_applied
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT (claim_number) DO UPDATE SET
+                transaction_type = EXCLUDED.transaction_type,
+                processed_timestamp = EXCLUDED.processed_timestamp,
+                status = EXCLUDED.status,
+                response_code = EXCLUDED.response_code,
+                response_message = EXCLUDED.response_message,
+                processing_time_ms = EXCLUDED.processing_time_ms,
+                patient_pay_amount = EXCLUDED.patient_pay_amount,
+                plan_pay_amount = EXCLUDED.plan_pay_amount,
+                deductible_applied = EXCLUDED.deductible_applied,
+                oop_applied = EXCLUDED.oop_applied
             """;
         
         try (Connection conn = connector.getConnection()) {

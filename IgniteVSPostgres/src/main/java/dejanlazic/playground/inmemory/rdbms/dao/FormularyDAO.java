@@ -39,6 +39,12 @@ public class FormularyDAO implements BaseDAO<Formulary, UUID> {
             ?, ?, ?, ?, ?
         FROM plan p
         WHERE p.plan_code = ?
+        ON CONFLICT (formulary_code) DO UPDATE SET
+            plan_id = EXCLUDED.plan_id,
+            formulary_name = EXCLUDED.formulary_name,
+            effective_date = EXCLUDED.effective_date,
+            termination_date = EXCLUDED.termination_date,
+            is_active = EXCLUDED.is_active
         RETURNING formulary_id
         """;
     
