@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network run-create-drug-interaction run-read-drug-interaction run-update-drug-interaction run-delete-drug-interaction run-all-drug-interaction load-all-data run-claim-simulation run-claim-simulation-1x run-claim-simulation-100x run-claim-simulation-1000x
+.PHONY: help start stop restart start-clean stop-clean restart-clean logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network run-create-drug-interaction run-read-drug-interaction run-update-drug-interaction run-delete-drug-interaction run-all-drug-interaction run-create-claim-line run-read-claim-line run-update-claim-line run-delete-claim-line run-all-claim-line run-create-plan-rule run-read-plan-rule run-update-plan-rule run-delete-plan-rule run-all-plan-rule load-all-data run-claim-simulation run-claim-simulation-1x run-claim-simulation-100x run-claim-simulation-1000x
 
 # Default target
 help:
@@ -6,13 +6,16 @@ help:
 	@echo "=================================="
 	@echo ""
 	@echo "Docker Services:"
-	@echo "  make start             - Start all services (PostgreSQL, Redis, pgAdmin)"
-	@echo "  make stop              - Stop all services"
-	@echo "  make restart           - Restart all services"
+	@echo "  make start             - Start all services (preserve data volumes)"
+	@echo "  make stop              - Stop all services (preserve data volumes)"
+	@echo "  make restart           - Restart all services (preserve data volumes)"
+	@echo "  make start-clean       - Start all services (remove volumes - fresh start)"
+	@echo "  make stop-clean        - Stop all services and remove volumes (delete all data)"
+	@echo "  make restart-clean     - Restart all services (remove volumes - fresh start)"
 	@echo "  make logs              - View logs from all services"
 	@echo "  make logs-db           - View PostgreSQL logs"
 	@echo "  make logs-redis        - View Redis logs"
-	@echo "  make clean             - Remove all containers and volumes"
+	@echo "  make clean             - Remove all containers and volumes (alias for stop-clean)"
 	@echo ""
 	@echo "Database:"
 	@echo "  make db-shell          - Connect to PostgreSQL shell"
@@ -29,11 +32,25 @@ help:
 	@echo "  make load-all-data     - Load ALL data in correct order (Plan→Member→Enrollment)"
 	@echo ""
 	@echo "Plan Operations:"
-	@echo "  make run-create-plan   - CREATE: Insert benefit plans from CSV"
+	@echo "  make run-create-plan   - CREATE: Insert benefit plans from CSV (30 records)"
 	@echo "  make run-read-plan     - READ: Display benefit plans"
 	@echo "  make run-update-plan   - UPDATE: Update a sample plan"
 	@echo "  make run-delete-plan   - DELETE: Delete a sample plan"
 	@echo "  make run-all-plan      - Run all CRUD operations for plans"
+	@echo ""
+	@echo "Claim Line Operations:"
+	@echo "  make run-create-claim-line - CREATE: Insert claim lines from CSV"
+	@echo "  make run-read-claim-line   - READ: Display claim line statistics"
+	@echo "  make run-update-claim-line - UPDATE: Update a sample claim line"
+	@echo "  make run-delete-claim-line - DELETE: Delete a sample claim line"
+	@echo "  make run-all-claim-line    - Run all CRUD operations for claim lines"
+	@echo ""
+	@echo "Plan Rule Operations:"
+	@echo "  make run-create-plan-rule  - CREATE: Insert plan rules from CSV (25K records)"
+	@echo "  make run-read-plan-rule    - READ: Display plan rule statistics"
+	@echo "  make run-update-plan-rule  - UPDATE: Update a sample plan rule"
+	@echo "  make run-delete-plan-rule  - DELETE: Delete a sample plan rule"
+	@echo "  make run-all-plan-rule     - Run all CRUD operations for plan rules"
 	@echo ""
 	@echo "Member Operations:"
 	@echo "  make run-create-member - CREATE: Insert members from CSV"
@@ -97,9 +114,9 @@ help:
 	@echo "  make run-claim-simulation-100x   - Run at 100x speed (~15 minutes)"
 	@echo "  make run-claim-simulation-1000x  - Run at 1000x speed (~1-2 minutes)"
 
-# Start all services
+# Start all services (preserve data volumes)
 start:
-	@echo "Starting PBM services..."
+	@echo "Starting PBM services (preserving data volumes)..."
 	docker-compose up -d
 	@echo "Waiting for PostgreSQL to be ready..."
 	@sleep 5
@@ -117,14 +134,46 @@ start:
 	@echo ""
 	@echo "Redis: localhost:6379"
 
-# Stop all services
+# Stop all services (preserve data volumes)
 stop:
-	@echo "Stopping PBM services..."
+	@echo "Stopping PBM services (preserving data volumes)..."
 	docker-compose stop
-	@echo "✓ All services stopped"
+	@echo "✓ All services stopped (data volumes preserved)"
 
-# Restart all services
+# Restart all services (preserve data volumes)
 restart: stop start
+
+# Start all services with clean volumes (fresh start)
+start-clean:
+	@echo "Starting PBM services with clean volumes (fresh start)..."
+	@echo "⚠️  This will remove all existing data volumes!"
+	docker-compose down -v
+	docker-compose up -d
+	@echo "Waiting for PostgreSQL to be ready..."
+	@sleep 5
+	@docker-compose exec -T postgres pg_isready -U pbm_user -d pbm_db
+	@echo "✓ All services started successfully with fresh data!"
+	@echo ""
+	@echo "PostgreSQL: localhost:5432"
+	@echo "  Database: pbm_db"
+	@echo "  User: pbm_user"
+	@echo "  Password: pbm_password"
+	@echo ""
+	@echo "pgAdmin: http://localhost:5050"
+	@echo "  Email: admin@pbm.local"
+	@echo "  Password: admin"
+	@echo ""
+	@echo "Redis: localhost:6379"
+
+# Stop all services and remove volumes (delete all data)
+stop-clean:
+	@echo "Stopping PBM services and removing volumes..."
+	@echo "⚠️  This will delete all data!"
+	docker-compose down -v
+	@echo "✓ All services stopped and data volumes removed"
+
+# Restart all services with clean volumes (fresh start)
+restart-clean: stop-clean start-clean
 
 # View logs
 logs:
@@ -476,6 +525,72 @@ run-all-drug-interaction: build
 	@echo "⚠️  This will load and insert drug interaction records"
 	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
 	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL DRUG_INTERACTION"
+
+# ============================================================================
+# Claim Line CRUD Operations
+# ============================================================================
+
+# CREATE: Insert claim lines from CSV
+run-create-claim-line: build
+	@echo "Running CREATE operation for Claim Lines..."
+	@echo "⚠️  This will load and insert claim line records"
+	@echo "⏳ Expected time: varies based on number of claim lines"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE CLAIM_LINE"
+
+# READ: Display claim line statistics
+run-read-claim-line: build
+	@echo "Running READ operation for Claim Lines..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ CLAIM_LINE"
+
+# UPDATE: Update a sample claim line
+run-update-claim-line: build
+	@echo "Running UPDATE operation for Claim Lines..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE CLAIM_LINE"
+
+# DELETE: Delete a sample claim line
+run-delete-claim-line: build
+	@echo "Running DELETE operation for Claim Lines..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE CLAIM_LINE"
+
+# Run all CRUD operations for claim lines
+run-all-claim-line: build
+	@echo "Running all CRUD operations for Claim Lines..."
+	@echo "⚠️  This will load and insert claim line records"
+	@echo "⏳ Expected time: varies based on number of claim lines"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL CLAIM_LINE"
+
+# ============================================================================
+# Plan Rule CRUD Operations
+# ============================================================================
+
+# CREATE: Insert plan rules from CSV (25,594 records)
+run-create-plan-rule: build
+	@echo "Running CREATE operation for Plan Rules..."
+	@echo "⚠️  This will load and insert 25,594 plan rule records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE PLAN_RULE"
+
+# READ: Display plan rule statistics
+run-read-plan-rule: build
+	@echo "Running READ operation for Plan Rules..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ PLAN_RULE"
+
+# UPDATE: Update a sample plan rule
+run-update-plan-rule: build
+	@echo "Running UPDATE operation for Plan Rules..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE PLAN_RULE"
+
+# DELETE: Delete a sample plan rule
+run-delete-plan-rule: build
+	@echo "Running DELETE operation for Plan Rules..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE PLAN_RULE"
+
+# Run all CRUD operations for plan rules
+run-all-plan-rule: build
+	@echo "Running all CRUD operations for Plan Rules..."
+	@echo "⚠️  This will load and insert 25,594 plan rule records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL PLAN_RULE"
 
 # ============================================================================
 # Load All Data in Correct Order
