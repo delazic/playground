@@ -75,7 +75,7 @@ public class ClaimConverter {
                         "  - Multiple files: " + FILE_PREFIX + "01" + FILE_SUFFIX + ", " +
                         FILE_PREFIX + "02" + FILE_SUFFIX + ", etc.\n" +
                         "  - Single file: " + singleFilename + "\n\n" +
-                        "Please run: cd database/scripts && python3 generate_1m_claims.py");
+                        "Please run: cd database/scripts && python3 generate_claims.py");
                 }
                 
                 allClaims = loadClaimsFromStream(is);
@@ -328,4 +328,3 @@ public class ClaimConverter {
     }
 }
 
-// Made with Bob

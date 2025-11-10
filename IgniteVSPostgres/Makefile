@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network load-all-data run-claim-simulation run-claim-simulation-1x run-claim-simulation-100x run-claim-simulation-1000x
+.PHONY: help start stop restart logs clean db-shell db-reset build test run run-all run-create-plan run-read-plan run-update-plan run-delete-plan run-all-plan run-create-member run-read-member run-update-member run-delete-member run-all-member run-create-enrollment run-read-enrollment run-update-enrollment run-delete-enrollment run-all-enrollment run-create-drug run-read-drug run-update-drug run-delete-drug run-all-drug run-create-pharmacy run-read-pharmacy run-update-pharmacy run-delete-pharmacy run-all-pharmacy run-create-formulary run-read-formulary run-update-formulary run-delete-formulary run-all-formulary run-create-formulary-drug run-read-formulary-drug run-update-formulary-drug run-delete-formulary-drug run-all-formulary-drug run-create-pharmacy-network run-read-pharmacy-network run-update-pharmacy-network run-delete-pharmacy-network run-all-pharmacy-network run-create-drug-interaction run-read-drug-interaction run-update-drug-interaction run-delete-drug-interaction run-all-drug-interaction load-all-data run-claim-simulation run-claim-simulation-1x run-claim-simulation-100x run-claim-simulation-1000x
 
 # Default target
 help:
@@ -83,6 +83,13 @@ help:
 	@echo "  make run-update-pharmacy-network - UPDATE: Update a sample pharmacy network"
 	@echo "  make run-delete-pharmacy-network - DELETE: Delete a sample pharmacy network"
 	@echo "  make run-all-pharmacy-network    - Run all CRUD operations for pharmacy networks"
+	@echo ""
+	@echo "Drug Interaction Operations:"
+	@echo "  make run-create-drug-interaction - CREATE: Insert drug interactions from CSV"
+	@echo "  make run-read-drug-interaction   - READ: Display drug interaction statistics"
+	@echo "  make run-update-drug-interaction - UPDATE: Update a sample drug interaction"
+	@echo "  make run-delete-drug-interaction - DELETE: Delete a sample drug interaction"
+	@echo "  make run-all-drug-interaction    - Run all CRUD operations for drug interactions"
 	@echo ""
 	@echo "Claim Simulation Operations:"
 	@echo "  make run-claim-simulation        - Run claim adjudication simulation (1M claims at 100x speed)"
@@ -438,6 +445,39 @@ run-all-pharmacy-network: build
 	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL PHARMACY_NETWORK"
 
 # ============================================================================
+# Drug Interaction CRUD Operations
+# ============================================================================
+
+# CREATE: Insert drug interactions from CSV
+run-create-drug-interaction: build
+	@echo "Running CREATE operation for Drug Interactions..."
+	@echo "⚠️  This will load and insert drug interaction records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="CREATE DRUG_INTERACTION"
+
+# READ: Display drug interaction statistics
+run-read-drug-interaction: build
+	@echo "Running READ operation for Drug Interactions..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="READ DRUG_INTERACTION"
+
+# UPDATE: Update a sample drug interaction
+run-update-drug-interaction: build
+	@echo "Running UPDATE operation for Drug Interactions..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="UPDATE DRUG_INTERACTION"
+
+# DELETE: Delete a sample drug interaction
+run-delete-drug-interaction: build
+	@echo "Running DELETE operation for Drug Interactions..."
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="DELETE DRUG_INTERACTION"
+
+# Run all CRUD operations for drug interactions
+run-all-drug-interaction: build
+	@echo "Running all CRUD operations for Drug Interactions..."
+	@echo "⚠️  This will load and insert drug interaction records"
+	@echo "⏳ Expected time: 1-2 minutes depending on system performance"
+	mvn exec:java -Dexec.mainClass="dejanlazic.playground.inmemory.rdbms.App" -Dexec.args="ALL DRUG_INTERACTION"
+
+# ============================================================================
 # Load All Data in Correct Order
 # ============================================================================
 
@@ -543,7 +583,7 @@ run-claim-simulation-1x: build
 	@echo "at REAL-TIME speed (1x) - simulating an actual 24-hour day"
 	@echo ""
 	@echo "Prerequisites:"
-	@echo "  1. Claims data generated: database/scripts/generate_1m_claims.py"
+	@echo "  1. Claims data generated: database/scripts/generate_claims.py"
 	@echo "  2. Reference data loaded: make load-all-data"
 	@echo ""
 	@echo "⚠️  Expected time: ~24 hours (full day simulation)"
@@ -568,7 +608,7 @@ run-claim-simulation-100x: build
 	@echo "at 100x speed (24 hours compressed to ~15 minutes)"
 	@echo ""
 	@echo "Prerequisites:"
-	@echo "  1. Claims data generated: database/scripts/generate_1m_claims.py"
+	@echo "  1. Claims data generated: database/scripts/generate_claims.py"
 	@echo "  2. Reference data loaded: make load-all-data"
 	@echo ""
 	@echo "⚠️  Expected time: 12-15 minutes"
@@ -592,7 +632,7 @@ run-claim-simulation-1000x: build
 	@echo "at 1000x speed (24 hours compressed to ~1-2 minutes)"
 	@echo ""
 	@echo "Prerequisites:"
-	@echo "  1. Claims data generated: database/scripts/generate_1m_claims.py"
+	@echo "  1. Claims data generated: database/scripts/generate_claims.py"
 	@echo "  2. Reference data loaded: make load-all-data"
 	@echo ""
 	@echo "⚠️  Expected time: 1-2 minutes"

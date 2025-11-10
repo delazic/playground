@@ -1554,6 +1554,13 @@ make run-update-pharmacy-network  # UPDATE: Update a sample pharmacy network
 make run-delete-pharmacy-network  # DELETE: Delete a sample pharmacy network
 make run-all-pharmacy-network     # Run all CRUD operations for pharmacy networks
 
+# Drug Interaction Operations 🆕
+make run-create-drug-interaction  # CREATE: Insert drug interactions from CSV
+make run-read-drug-interaction    # READ: Display drug interaction statistics
+make run-update-drug-interaction  # UPDATE: Update a sample drug interaction
+make run-delete-drug-interaction  # DELETE: Delete a sample drug interaction
+make run-all-drug-interaction     # Run all CRUD operations for drug interactions
+
 # Claim Simulation Operations 🆕
 make run-claim-simulation         # Run claim adjudication simulation (1M claims at 100x speed)
 ```
@@ -1708,7 +1715,7 @@ After setting up the development environment:
    python3 generate_members.py             # 1M members
    python3 generate_enrollments.py         # 10M enrollments
    python3 generate_formularies_drugs.py   # 10M formulary-drug relationships
-   python3 generate_1m_claims.py           # 1M pharmacy claims 🆕
+   python3 generate_claims.py              # 1M pharmacy claims 🆕
    ```
 
 2. **Load Test Data:**
@@ -1900,7 +1907,7 @@ The simulation replicates a mid-size PBM's daily claim volume with:
 
 ### Key Components
 
-1. **Claim Generation Script** (`generate_1m_claims.py`)
+1. **Claim Generation Script** (`generate_claims.py`)
    - Generates 1M realistic pharmacy claims in CSV format
    - NCPDP-compliant structure with 22 fields
    - Realistic distribution patterns (transaction types, quantities, pricing)
@@ -1939,7 +1946,7 @@ The simulation replicates a mid-size PBM's daily claim volume with:
 ```bash
 # Step 1: Generate 1M claims (takes ~2 minutes)
 cd database/scripts
-python3 generate_1m_claims.py
+python3 generate_claims.py
 
 # Step 2: Ensure reference data is loaded
 make load-all-data  # If not already done

@@ -304,4 +304,4 @@ def generate_drug_interactions(total_records=20000, target_file_size_mb=30):
 if __name__ == "__main__":
     generate_drug_interactions(total_records=20000, target_file_size_mb=30)
 
-# Made with Bob
+

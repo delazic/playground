@@ -33,7 +33,7 @@ import dejanlazic.playground.inmemory.rdbms.service.ClaimSimulationService;
  *   1. Database must be running (docker-compose up)
  *   2. Schema must be initialized
  *   3. Reference data must be loaded (members, pharmacies, drugs, plans, etc.)
- *   4. Claims CSV file must be generated (run generate_1m_claims.py)
+ *   4. Claims CSV file must be generated (run generate_claims.py)
  */
 public class ClaimSimulationApp {
     private static final Logger LOGGER = Logger.getLogger(ClaimSimulationApp.class.getName());
@@ -127,7 +127,7 @@ public class ClaimSimulationApp {
             System.err.println();
             System.err.println("Generate them by running:");
             System.err.println("  cd database/scripts");
-            System.err.println("  python3 generate_1m_claims.py");
+            System.err.println("  python3 generate_claims.py");
             System.exit(1);
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Database error during simulation", e);
@@ -229,4 +229,3 @@ public class ClaimSimulationApp {
     }
 }
 
-// Made with Bob

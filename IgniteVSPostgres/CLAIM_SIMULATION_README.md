@@ -100,7 +100,7 @@ Generate 1 million claims for simulation:
 
 ```bash
 cd database/scripts
-python3 generate_1m_claims.py
+python3 generate_claims.py
 ```
 
 **This creates multiple files (~30MB each):**
@@ -118,7 +118,7 @@ python3 generate_1m_claims.py
 - Member IDs in string format (e.g., "MBR000466742")
 
 **Configuration:**
-You can modify these settings in `generate_1m_claims.py`:
+You can modify these settings in `generate_claims.py`:
 - `TARGET_FILE_SIZE_MB = 30` - Target size for each file
 - `TOTAL_CLAIMS = 1_000_000` - Total number of claims
 
@@ -406,7 +406,7 @@ WHERE status = 'APPROVED';
 **Solution:**
 ```bash
 cd database/scripts
-python3 generate_1m_claims.py
+python3 generate_claims.py
 ```
 
 Ensure the files exist at:
@@ -494,4 +494,3 @@ export MAVEN_OPTS="-Xmx8g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 
 ---
 
-**Made with Bob** 🤖

@@ -412,4 +412,3 @@ public class ClaimDAO implements BaseDAO<Claim, Long> {
     }
 }
 
-// Made with Bob

@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import dejanlazic.playground.inmemory.rdbms.converter.BenefitPlanConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.DrugConverter;
+import dejanlazic.playground.inmemory.rdbms.converter.DrugInteractionConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.EnrollmentConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.FormularyConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.FormularyDrugConverter;
@@ -17,6 +18,7 @@ import dejanlazic.playground.inmemory.rdbms.converter.PharmacyConverter;
 import dejanlazic.playground.inmemory.rdbms.converter.PharmacyNetworkConverter;
 import dejanlazic.playground.inmemory.rdbms.dao.BenefitPlanDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.DrugDAO;
+import dejanlazic.playground.inmemory.rdbms.dao.DrugInteractionDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.EnrollmentDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.FormularyDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.FormularyDrugDAO;
@@ -25,6 +27,7 @@ import dejanlazic.playground.inmemory.rdbms.dao.PharmacyDAO;
 import dejanlazic.playground.inmemory.rdbms.dao.PharmacyNetworkDAO;
 import dejanlazic.playground.inmemory.rdbms.model.BenefitPlan;
 import dejanlazic.playground.inmemory.rdbms.model.Drug;
+import dejanlazic.playground.inmemory.rdbms.model.DrugInteraction;
 import dejanlazic.playground.inmemory.rdbms.model.Enrollment;
 import dejanlazic.playground.inmemory.rdbms.model.Formulary;
 import dejanlazic.playground.inmemory.rdbms.model.FormularyDrug;
@@ -39,23 +42,25 @@ import dejanlazic.playground.inmemory.rdbms.model.PharmacyNetwork;
  *   java App [operation] [entity]
  *
  * Operations: CREATE, READ, UPDATE, DELETE, ALL
- * Entities: PLAN, DRUG, MEMBER, ENROLLMENT, FORMULARY, FORMULARY_DRUG, PHARMACY, PHARMACY_NETWORK
+ * Entities: PLAN, DRUG, DRUG_INTERACTION, MEMBER, ENROLLMENT, FORMULARY, FORMULARY_DRUG, PHARMACY, PHARMACY_NETWORK
  *
  * Examples:
- *   java App CREATE PLAN            - Insert benefit plans from CSV
- *   java App READ PLAN              - Read and display plans
- *   java App CREATE DRUG            - Insert drugs from CSV
- *   java App READ DRUG              - Read and display drugs
- *   java App CREATE PHARMACY        - Insert pharmacies from CSV
- *   java App READ PHARMACY          - Read and display pharmacies
- *   java App CREATE ENROLLMENT      - Insert enrollments from CSV
- *   java App READ ENROLLMENT        - Read and display enrollments
- *   java App CREATE FORMULARY       - Insert formularies from CSV
- *   java App READ FORMULARY         - Read and display formularies
- *   java App CREATE FORMULARY_DRUG  - Insert formulary-drug relationships from CSV
- *   java App READ FORMULARY_DRUG    - Read and display formulary-drug relationships
- *   java App ALL PHARMACY           - Run all CRUD operations for pharmacies
- *   java App                        - Run all operations for all entities (default)
+ *   java App CREATE PLAN                - Insert benefit plans from CSV
+ *   java App READ PLAN                  - Read and display plans
+ *   java App CREATE DRUG                - Insert drugs from CSV
+ *   java App READ DRUG                  - Read and display drugs
+ *   java App CREATE DRUG_INTERACTION    - Insert drug interactions from CSV
+ *   java App READ DRUG_INTERACTION      - Read and display drug interactions
+ *   java App CREATE PHARMACY            - Insert pharmacies from CSV
+ *   java App READ PHARMACY              - Read and display pharmacies
+ *   java App CREATE ENROLLMENT          - Insert enrollments from CSV
+ *   java App READ ENROLLMENT            - Read and display enrollments
+ *   java App CREATE FORMULARY           - Insert formularies from CSV
+ *   java App READ FORMULARY             - Read and display formularies
+ *   java App CREATE FORMULARY_DRUG      - Insert formulary-drug relationships from CSV
+ *   java App READ FORMULARY_DRUG        - Read and display formulary-drug relationships
+ *   java App ALL PHARMACY               - Run all CRUD operations for pharmacies
+ *   java App                            - Run all operations for all entities (default)
  */
 public class App {
     private static final Logger LOGGER = Logger.getLogger(App.class.getName());
@@ -85,6 +90,10 @@ public class App {
             
             if ("ALL".equals(entity) || "DRUG".equals(entity)) {
                 executeDrugOperations(connector, operation);
+            }
+            
+            if ("ALL".equals(entity) || "DRUG_INTERACTION".equals(entity)) {
+                executeDrugInteractionOperations(connector, operation);
             }
             
             if ("ALL".equals(entity) || "PHARMACY".equals(entity)) {
@@ -149,6 +158,25 @@ public class App {
                 readDrugs(connector);
                 updateDrug(connector);
                 deleteDrug(connector);
+            }
+            default -> System.err.println("❌ Unknown operation: " + operation);
+        }
+    }
+    
+    /**
+     * Execute CRUD operations for DrugInteraction entity
+     */
+    private static void executeDrugInteractionOperations(DatabaseConnector connector, String operation) {
+        switch (operation) {
+            case "CREATE" -> createDrugInteractions(connector);
+            case "READ" -> readDrugInteractions(connector);
+            case "UPDATE" -> updateDrugInteraction(connector);
+            case "DELETE" -> deleteDrugInteraction(connector);
+            case "ALL" -> {
+                createDrugInteractions(connector);
+                readDrugInteractions(connector);
+                updateDrugInteraction(connector);
+                deleteDrugInteraction(connector);
             }
             default -> System.err.println("❌ Unknown operation: " + operation);
         }
@@ -528,6 +556,206 @@ public class App {
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to delete drug", e);
             System.err.println("❌ Failed to delete drug: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * CREATE operation for DrugInteractions
+     */
+    private static void createDrugInteractions(DatabaseConnector connector) {
+        List<DrugInteraction> interactions = loadDrugInteractions();
+        if (interactions != null) {
+            insertAndReportDrugInteractions(connector, interactions);
+        }
+    }
+    
+    /**
+     * READ operation for DrugInteractions
+     */
+    private static void readDrugInteractions(DatabaseConnector connector) {
+        printHeader("Reading Drug Interactions");
+        DrugInteractionDAO dao = new DrugInteractionDAO(connector);
+        
+        try {
+            long count = dao.count();
+            System.out.println("📖 Found " + String.format("%,d", count) + " drug interactions in database");
+            System.out.println();
+            
+            if (count > 0) {
+                List<DrugInteraction> interactions = dao.findAll();
+                
+                // Display first 10 interactions
+                int displayCount = Math.min(10, interactions.size());
+                System.out.println("Displaying first " + displayCount + " drug interactions:");
+                System.out.println("-".repeat(120));
+                System.out.printf("%-20s | %-20s | %-20s | %-15s | %-10s | %-10s%n",
+                    "Drug 1", "Drug 2", "Severity", "Mechanism", "Alert", "Intervention");
+                System.out.println("-".repeat(120));
+                
+                for (int i = 0; i < displayCount; i++) {
+                    DrugInteraction interaction = interactions.get(i);
+                    System.out.printf("%-20s | %-20s | %-20s | %-15s | %-10s | %-10s%n",
+                        truncate(interaction.getDrug1Name(), 20),
+                        truncate(interaction.getDrug2Name(), 20),
+                        truncate(interaction.getSeverityLevel(), 20),
+                        truncate(interaction.getInteractionMechanism(), 15),
+                        interaction.isRequiresAlert() ? "Yes" : "No",
+                        interaction.isRequiresIntervention() ? "Yes" : "No");
+                }
+                System.out.println("-".repeat(120));
+                
+                // Display statistics
+                long severeCount = interactions.stream().filter(DrugInteraction::isSevere).count();
+                long moderateCount = interactions.stream().filter(DrugInteraction::isModerate).count();
+                long minorCount = interactions.stream().filter(DrugInteraction::isMinor).count();
+                long requiresAlertCount = interactions.stream().filter(DrugInteraction::isRequiresAlert).count();
+                long requiresInterventionCount = interactions.stream().filter(DrugInteraction::isRequiresIntervention).count();
+                
+                System.out.println();
+                System.out.println("Drug Interaction Statistics:");
+                System.out.println("  Severe/Major:  " + String.format("%,d", severeCount) +
+                    " (" + String.format("%.1f%%", (severeCount * 100.0 / count)) + ")");
+                System.out.println("  Moderate:      " + String.format("%,d", moderateCount) +
+                    " (" + String.format("%.1f%%", (moderateCount * 100.0 / count)) + ")");
+                System.out.println("  Minor:         " + String.format("%,d", minorCount) +
+                    " (" + String.format("%.1f%%", (minorCount * 100.0 / count)) + ")");
+                System.out.println();
+                System.out.println("Action Required:");
+                System.out.println("  Requires Alert:        " + String.format("%,d", requiresAlertCount) +
+                    " (" + String.format("%.1f%%", (requiresAlertCount * 100.0 / count)) + ")");
+                System.out.println("  Requires Intervention: " + String.format("%,d", requiresInterventionCount) +
+                    " (" + String.format("%.1f%%", (requiresInterventionCount * 100.0 / count)) + ")");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to read drug interactions", e);
+            System.err.println("❌ Failed to read drug interactions: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * UPDATE operation for DrugInteractions
+     */
+    private static void updateDrugInteraction(DatabaseConnector connector) {
+        printHeader("Updating a Drug Interaction");
+        DrugInteractionDAO dao = new DrugInteractionDAO(connector);
+        
+        try {
+            // Find first interaction to update
+            List<DrugInteraction> interactions = dao.findAll();
+            if (interactions.isEmpty()) {
+                System.out.println("⚠️  No drug interactions found to update");
+                printSeparator();
+                return;
+            }
+            
+            DrugInteraction interaction = interactions.get(0);
+            String originalSeverity = interaction.getSeverityLevel();
+            boolean originalAlert = interaction.isRequiresAlert();
+            
+            // Update the interaction
+            interaction.setSeverityLevel("Major");
+            interaction.setRequiresAlert(true);
+            
+            boolean updated = dao.update(interaction);
+            if (updated) {
+                System.out.println("✅ Successfully updated drug interaction: " + interaction.getInteractionCode());
+                System.out.println("   Old severity: " + originalSeverity);
+                System.out.println("   New severity: " + interaction.getSeverityLevel());
+                System.out.println("   Old requires alert: " + originalAlert);
+                System.out.println("   New requires alert: " + interaction.isRequiresAlert());
+            } else {
+                System.out.println("⚠️  Drug interaction not found or not updated");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to update drug interaction", e);
+            System.err.println("❌ Failed to update drug interaction: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * DELETE operation for DrugInteractions
+     */
+    private static void deleteDrugInteraction(DatabaseConnector connector) {
+        printHeader("Deleting a Drug Interaction");
+        DrugInteractionDAO dao = new DrugInteractionDAO(connector);
+        
+        try {
+            // Find an interaction to delete
+            List<DrugInteraction> interactions = dao.findAll();
+            if (interactions.isEmpty()) {
+                System.out.println("⚠️  No drug interactions found to delete");
+                printSeparator();
+                return;
+            }
+            
+            // Delete the last interaction
+            DrugInteraction interactionToDelete = interactions.get(interactions.size() - 1);
+            String interactionCode = interactionToDelete.getInteractionCode();
+            
+            boolean deleted = dao.delete(interactionToDelete.getInteractionId());
+            if (deleted) {
+                System.out.println("✅ Successfully deleted drug interaction: " + interactionCode);
+                System.out.println("   Drugs: " + interactionToDelete.getDrug1Name() + " + " + interactionToDelete.getDrug2Name());
+            } else {
+                System.out.println("⚠️  Drug interaction not found or not deleted");
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to delete drug interaction", e);
+            System.err.println("❌ Failed to delete drug interaction: " + e.getMessage());
+        }
+        printSeparator();
+    }
+    
+    /**
+     * Load drug interactions from CSV file
+     * @return List of drug interactions, or null if loading fails
+     */
+    private static List<DrugInteraction> loadDrugInteractions() {
+        printHeader("Loading and Inserting Drug Interactions");
+        
+        DrugInteractionConverter interactionConverter = new DrugInteractionConverter();
+        try {
+            List<DrugInteraction> interactions = interactionConverter.loadAllDrugInteractions();
+            System.out.println("✅ Loaded " + String.format("%,d", interactions.size()) + " drug interactions from CSV file");
+            return interactions;
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load drug interactions", ex);
+            System.err.println("❌ Failed to load drug interactions: " + ex.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Insert drug interactions into database and report results using DAO
+     * @param connector Database connector
+     * @param interactions List of drug interactions to insert
+     */
+    private static void insertAndReportDrugInteractions(DatabaseConnector connector, List<DrugInteraction> interactions) {
+        DrugInteractionDAO dao = new DrugInteractionDAO(connector);
+        
+        System.out.println("📝 Inserting " + String.format("%,d", interactions.size()) + " drug interactions into database...");
+        System.out.println("⏳ This may take a moment...");
+        
+        long startTime = System.currentTimeMillis();
+        try {
+            int inserted = dao.insertBatch(interactions);
+            long totalTime = System.currentTimeMillis() - startTime;
+            double seconds = totalTime / 1000.0;
+            double recordsPerSecond = inserted / seconds;
+            
+            System.out.println("✅ Successfully inserted " + String.format("%,d", inserted) + " drug interactions");
+            System.out.println("⏱️  Total time: " + String.format("%.2f", seconds) + " seconds");
+            System.out.println("🚀 Throughput: " + String.format("%,.0f", recordsPerSecond) + " records/sec");
+            
+            // Display count
+            long totalCount = dao.count();
+            System.out.println("📊 Total drug interactions in database: " + String.format("%,d", totalCount));
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to insert drug interactions", e);
+            System.err.println("❌ Failed to insert drug interactions: " + e.getMessage());
         }
         printSeparator();
     }

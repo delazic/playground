@@ -336,4 +336,3 @@ public class ClaimSimulationService {
     }
 }
 
-// Made with Bob

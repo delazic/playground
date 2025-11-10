@@ -536,7 +536,7 @@ The project includes a fully functional claim adjudication simulation that proce
 ### 11.2 System Components
 
 #### Claim Generation
-- **Script**: `generate_1m_claims.py`
+- **Script**: `generate_claims.py`
 - **Output**: 1 million NCPDP-compliant claims in CSV format
 - **Features**:
   - Realistic hourly distribution (peak 9 AM - 6 PM)
@@ -577,7 +577,7 @@ The project includes a fully functional claim adjudication simulation that proce
 ```bash
 # Step 1: Generate claims data
 cd database/scripts
-python3 generate_1m_claims.py
+python3 generate_claims.py
 
 # Step 2: Ensure reference data is loaded
 make load-all-data  # If not already done
